@@ -1,0 +1,66 @@
+apply plugin: Android.androidLibrary
+apply plugin: Kotlin.jetbrainsKotlin
+apply plugin: Kotlin.kotlinParcelize
+apply plugin: Kotlin.kapt
+
+android {
+    namespace ApplicationConfig.nameSpace
+    compileSdk ApplicationConfig.compileSdkVersion
+
+    defaultConfig {
+        minSdk ApplicationConfig.minSdk
+        targetSdk ApplicationConfig.targetSdk
+        versionCode ReleaseConfig.versionCode
+        versionName ReleaseConfig.versionName
+        testInstrumentationRunner Testing.androidJUnitRunner
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    buildFeatures {
+        compose true
+        dataBinding true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion Compose.composeCompilerVersion
+    }
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+}
+
+dependencies {
+    implementation AndroidX.androidXCore
+    implementation AndroidX.androidXLifecycleRuntTime
+    implementation AndroidX.androidXLifecycleViewModelSavedState
+
+    implementation Compose.composeActivity
+    implementation Compose.composeUI
+    implementation Compose.composeUITollingPreview
+    implementation Compose.composeMaterial
+
+    testImplementation Testing.jUnit
+    androidTestImplementation Testing.androidXJUnit
+    androidTestImplementation Testing.espresso
+    androidTestImplementation Compose.composeUITest
+    debugImplementation Compose.composeUITollingTest
+    debugImplementation Compose.composeUITestManifest
+}

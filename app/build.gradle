@@ -1,0 +1,70 @@
+apply plugin: Android.androidApplication
+apply plugin: Kotlin.jetbrainsKotlin
+apply plugin: Kotlin.kotlinParcelize
+
+android {
+    namespace ApplicationConfig.nameSpace
+    compileSdk ApplicationConfig.compileSdkVersion
+
+    defaultConfig {
+        applicationId ApplicationConfig.nameSpace
+        minSdk ApplicationConfig.minSdk
+        targetSdk ApplicationConfig.targetSdk
+        versionCode ReleaseConfig.versionCode
+        versionName ReleaseConfig.versionName
+        testInstrumentationRunner Testing.androidJUnitRunner
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    buildFeatures {
+        compose true
+        dataBinding true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion Compose.composeCompilerVersion
+    }
+
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation AndroidX.androidXCore
+    implementation AndroidX.androidXLifecycleRuntTime
+    implementation AndroidX.androidXLifecycleViewModelSavedState
+    implementation AndroidX.androidXComposeViewModel
+
+    implementation Koin.koinAndroid
+    implementation Koin.koinCompose
+
+    implementation Compose.composeActivity
+    implementation Compose.composeUI
+    implementation Compose.composeUITollingPreview
+    implementation Compose.composeMaterial
+
+    implementation Animation.lottie
+
+    implementation(project(SharedModules.presentation))
+}
