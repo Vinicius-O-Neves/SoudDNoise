@@ -10,7 +10,9 @@ import kotlinx.coroutines.launch
 interface ObservableLifecycleOwner : LifecycleOwner {
 
     fun <T> collectFlow(
-        flow: Flow<T>, lifecycleState: Lifecycle.State = Lifecycle.State.STARTED, onCollect: (T) -> Unit
+        flow: Flow<T>,
+        lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
+        onCollect: (T) -> Unit
     ) {
         lifecycleScope.launch {
             repeatOnLifecycle(lifecycleState) {

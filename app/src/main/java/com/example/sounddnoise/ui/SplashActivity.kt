@@ -1,7 +1,6 @@
 package com.example.sounddnoise.ui
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
@@ -40,7 +39,7 @@ class SplashActivity : BaseComponentActivity() {
             lifecycleState = Lifecycle.State.RESUMED
         ) { redirect ->
             if (redirect) {
-                startActivity(Intent(this, MainActivity::class.java))
+                TODO("NOT IMPLEMENT")
             }
         }
     }

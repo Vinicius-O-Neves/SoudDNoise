@@ -20,11 +20,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".ui.MainActivity"
-            android:exported="true"
-            android:theme="@style/Theme" />
-
     </application>
 
 </manifest>
