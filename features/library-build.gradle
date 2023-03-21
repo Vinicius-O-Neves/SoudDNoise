@@ -51,6 +51,7 @@ dependencies {
     implementation AndroidX.androidXCore
     implementation AndroidX.androidXLifecycleRuntTime
     implementation AndroidX.androidXLifecycleViewModelSavedState
+    implementation AndroidX.androidXAppCompat
 
     implementation Compose.composeActivity
     implementation Compose.composeUI
@@ -63,4 +64,6 @@ dependencies {
     androidTestImplementation Compose.composeUITest
     debugImplementation Compose.composeUITollingTest
     debugImplementation Compose.composeUITestManifest
+
+    implementation(project(SharedModules.presentation))
 }
