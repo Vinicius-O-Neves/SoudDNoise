@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.lifecycle.Lifecycle
 import com.example.presentation.app.AppTheme
 import com.example.presentation.ui.BaseComponentActivity
+import com.example.sounddnoise.navigation.SplashNavigation
 import com.example.sounddnoise.ui.screen.SplashScreen
 import com.example.sounddnoise.viewmodel.SplashScreenViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -39,9 +40,16 @@ class SplashActivity : BaseComponentActivity() {
             lifecycleState = Lifecycle.State.RESUMED
         ) { redirect ->
             if (redirect) {
-                TODO("NOT IMPLEMENT")
+                navigateToNoiseActivity()
             }
         }
+    }
+
+    private fun navigateToNoiseActivity() {
+        val intent = SplashNavigation.intentToNoiseActivity(
+            this@SplashActivity
+        )
+        startActivity(intent)
     }
 
     override fun setupViews() {}

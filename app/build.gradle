@@ -67,4 +67,5 @@ dependencies {
     implementation Animation.lottie
 
     implementation(project(SharedModules.presentation))
+    implementation(project(SharedModules.navigation))
 }

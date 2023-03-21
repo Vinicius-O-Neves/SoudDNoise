@@ -17,8 +17,6 @@ class NoiseActivity : BaseActivity() {
         }
     }
 
-    override fun setupViews() {
-        TODO("Not yet implemented")
-    }
+    override fun setupViews() {}
 
 }
