@@ -1,5 +1,9 @@
 apply from: "$rootDir/shared/shared-library-build.gradle"
 
+android {
+    namespace = "com.example.shared.presentation"
+}
+
 dependencies {
     implementation AndroidX.androidXAppCompat
 

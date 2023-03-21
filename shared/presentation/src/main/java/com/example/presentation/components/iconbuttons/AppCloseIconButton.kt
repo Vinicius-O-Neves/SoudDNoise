@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import com.example.presentation.app.AppTheme
-import com.example.sounddnoise.R
+import com.example.shared.presentation.R
 
 @Composable
 fun AppCloseIconButton(

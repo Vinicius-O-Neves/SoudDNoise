@@ -47,9 +47,10 @@ class SplashActivity : BaseComponentActivity() {
 
     private fun navigateToNoiseActivity() {
         val intent = SplashNavigation.intentToNoiseActivity(
-            this@SplashActivity
+            this
         )
         startActivity(intent)
+        finish()
     }
 
     override fun setupViews() {}

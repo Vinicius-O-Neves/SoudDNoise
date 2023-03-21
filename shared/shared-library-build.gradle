@@ -2,7 +2,7 @@ apply plugin: Android.androidLibrary
 apply plugin: Kotlin.jetbrainsKotlin
 
 android {
-    namespace ApplicationConfig.nameSpace
+    namespace SharedModules.nameSpace
     compileSdk ApplicationConfig.compileSdkVersion
 
     defaultConfig {

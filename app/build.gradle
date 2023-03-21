@@ -68,4 +68,6 @@ dependencies {
 
     implementation(project(SharedModules.presentation))
     implementation(project(SharedModules.navigation))
+
+    implementation(project(FeaturesModule.noise))
 }
