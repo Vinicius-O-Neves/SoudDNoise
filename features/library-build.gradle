@@ -55,6 +55,7 @@ dependencies {
 
     implementation Compose.composeActivity
     implementation Compose.composeUI
+    debugImplementation Compose.composeUITolling
     implementation Compose.composeUITollingPreview
     implementation Compose.composeMaterial
 
