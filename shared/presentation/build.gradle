@@ -6,6 +6,7 @@ android {
 
 dependencies {
     implementation AndroidX.androidXAppCompat
+    implementation Compose.composeMaterial
 
     implementation Animation.lottie
 }
