@@ -49,6 +49,7 @@ android {
 dependencies {
     implementation Accompanist.systemUiController
 
+    implementation Compose.composeFoundation
     implementation Compose.composeUI
     implementation Compose.composeMaterial
 }
