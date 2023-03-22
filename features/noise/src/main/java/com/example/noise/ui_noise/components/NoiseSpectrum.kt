@@ -17,15 +17,16 @@ fun AudioSpectrum(fastFourierTransformArray: FloatArray) {
         modifier = Modifier.fillMaxSize(),
         onDraw = {
             val width = size.width
-            val height = size.height
-            val columnWidth = width / fastFourierTransformArray.size
+            val height = size.height / 3
+            val rowHeight = height / fastFourierTransformArray.size
 
             fastFourierTransformArray.forEachIndexed { index, amplitude ->
+                val columnWidth = width / fastFourierTransformArray.size
+
                 audioSpectrumItem(
                     color = getColorForAmplitude(amplitude),
                     columnWidth = columnWidth,
-                    height = height,
-                    columnHeight = amplitude / 100f * height,
+                    rowHeight = rowHeight,
                     index = index
                 )
             }
@@ -36,14 +37,13 @@ fun AudioSpectrum(fastFourierTransformArray: FloatArray) {
 private fun DrawScope.audioSpectrumItem(
     color: Color,
     columnWidth: Float,
-    height: Float,
-    columnHeight: Float,
+    rowHeight: Float,
     index: Int
 ) {
     drawRect(
         color = color,
-        topLeft = Offset(columnWidth * index, height - columnHeight),
-        size = Size(columnWidth, columnHeight)
+        topLeft = Offset(columnWidth * index, rowHeight - index),
+        size = Size(columnWidth, rowHeight)
     )
 }
 
