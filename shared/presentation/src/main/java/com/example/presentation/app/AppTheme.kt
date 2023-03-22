@@ -20,6 +20,8 @@ object AppTheme {
 @Composable
 fun AppTheme(
     forceLightMode: Boolean = false,
+    isSystemBarsVisible: Boolean = true,
+    isStatusBarVisible: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val systemUiController = rememberSystemUiController()
@@ -34,5 +36,10 @@ fun AppTheme(
         content()
     }
 
-    systemUiController.setStatusBarColor(color = appLightColorPalette.background)
+    systemUiController.apply {
+        setStatusBarColor(color = appLightColorPalette.primary)
+        this.isSystemBarsVisible = isSystemBarsVisible
+        this.isStatusBarVisible = isStatusBarVisible
+    }
+
 }

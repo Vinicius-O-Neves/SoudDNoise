@@ -19,7 +19,7 @@ private fun SplashScreenContent() {
     AppLottieAnimation(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppTheme.colors.background),
+            .background(AppTheme.colors.primary),
         lottieFile = R.raw.ic_listening
     )
 }
