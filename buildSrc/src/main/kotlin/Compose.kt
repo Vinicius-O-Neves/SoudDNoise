@@ -25,4 +25,6 @@ object Compose {
     const val composeUITollingTest = "androidx.compose.ui:ui-tooling:$composeUiVersion"
     const val composeUITest = "androidx.compose.ui:ui-test-junit4:$composeUiVersion"
     const val composeUITestManifest = "androidx.compose.ui:ui-test-manifest:$composeUiVersion"
+
+    const val composeConstraintLayout = "androidx.constraintlayout:constraintlayout-compose:1.0.1"
 }

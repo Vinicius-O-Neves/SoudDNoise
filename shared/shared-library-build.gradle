@@ -52,4 +52,6 @@ dependencies {
     implementation Compose.composeFoundation
     implementation Compose.composeUI
     implementation Compose.composeMaterial
+    implementation Compose.composeUI
+    debugImplementation Compose.composeUITolling
 }

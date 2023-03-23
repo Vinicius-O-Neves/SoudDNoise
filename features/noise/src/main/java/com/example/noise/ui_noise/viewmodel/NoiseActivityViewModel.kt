@@ -38,7 +38,7 @@ class AudioRecordViewModel : ViewModel() {
     private val _amplitudes = MutableStateFlow(0f)
     val amplitudes get() = _amplitudes
 
-    private val _fftArray = flow<FloatArray> {
+    private val _fftArray = flow {
         val buffer = FloatArray(_audioBufferSize / 2)
         while (true) {
             val fft = calculateFFT(buffer)

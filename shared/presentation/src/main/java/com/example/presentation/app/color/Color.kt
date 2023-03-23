@@ -11,7 +11,7 @@ val ds_dark_blue_variant = Color(0xFF0600B8)
 val ds_white = Color(0xFFE0DEDE)
 val ds_full_white = Color(0xFFFFFFFF)
 
-val ds_black = Color(0xFF2B2B2B)
+val ds_black = Color(0xFF030303)
 
 val ds_gray = Color(0xFF777777)
 

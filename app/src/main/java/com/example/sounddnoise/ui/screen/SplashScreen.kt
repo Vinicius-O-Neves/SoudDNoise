@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.presentation.app.AppTheme
 import com.example.presentation.components.lottie.AppLottieAnimation
+import com.example.presentation.sounddnoise.theme.SoundDNoiseTheme
 import com.example.sounddnoise.R
 
 @Composable
@@ -27,7 +28,7 @@ private fun SplashScreenContent() {
 @Composable
 @Preview
 private fun SplashScreen_Preview() {
-    AppTheme {
+    SoundDNoiseTheme {
         SplashScreenContent()
     }
 }
