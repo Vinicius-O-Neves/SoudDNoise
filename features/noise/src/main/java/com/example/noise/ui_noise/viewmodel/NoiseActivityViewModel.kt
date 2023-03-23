@@ -10,100 +10,93 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
-import org.jtransforms.fft.FloatFFT_1D
-import java.lang.StrictMath.abs
-import java.lang.StrictMath.log10
+import org.jtransforms.fft.DoubleFFT_1D
+import java.lang.StrictMath.sqrt
+import java.nio.ByteBuffer
+
+const val SAMPLE_RATE = 44100 // Sample rate in Hz
+const val FFT_SIZE = 1024 // FFT size
+const val BUFFER_SIZE = FFT_SIZE * 2 // Buffer size in bytes
 
 class AudioRecordViewModel : ViewModel() {
+    private var isRecording = false
+    private lateinit var audioRecord: AudioRecord
 
-    companion object {
-        const val SAMPLE_RATE = 44100 // audio sample rate in Hz
-        const val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO // audio channel configuration
-        const val AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT // audio encoding format
-    }
+    private val fft = DoubleFFT_1D(FFT_SIZE.toLong())
+    private val _frequencies = MutableStateFlow(floatArrayOf())
+    val frequencies get() = _frequencies
 
-    private val _audioBufferSize =
-        AudioRecord.getMinBufferSize(
-            SAMPLE_RATE,
-            CHANNEL_CONFIG,
-            AUDIO_ENCODING
-        ) * 2 // audio buffer size in bytes
+    fun startRecording(context: Context) {
+        if (isRecording) return
 
-    private var _audioRecord: AudioRecord? = null
-
-    private val _amplitudes = MutableStateFlow(0f)
-    val amplitudes get() = _amplitudes
-
-    private val _fftArray = flow {
-        val buffer = FloatArray(_audioBufferSize / 2)
-        while (true) {
-            val fft = calculateFFT(buffer)
-            emit(fft)
-        }
-    }.flowOn(Dispatchers.IO)
-    val fftArray get() = _fftArray
-
-    private fun startRecord() {
-        viewModelScope.launch {
-            _audioRecord?.startRecording()
-
-            viewModelScope.launch {
-                while (true) {
-                    val buffer = ShortArray(_audioBufferSize / 2)
-                    val amplitude = calculateAmplitude(buffer)
-                    _amplitudes.value = amplitude
-                }
-            }
-        }
-    }
-
-    private fun setAudioRecord(context: Context) {
-        _audioRecord = if (ActivityCompat.checkSelfPermission(
+        if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            AudioRecord(
+            audioRecord = AudioRecord(
                 MediaRecorder.AudioSource.MIC,
                 SAMPLE_RATE,
-                CHANNEL_CONFIG,
-                AUDIO_ENCODING,
-                _audioBufferSize
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                BUFFER_SIZE
             )
-        } else {
-            AudioRecord(
-                MediaRecorder.MEDIA_RECORDER_INFO_UNKNOWN,
-                SAMPLE_RATE,
-                CHANNEL_CONFIG,
-                AUDIO_ENCODING,
-                _audioBufferSize
-            )
+        }
+
+
+        isRecording = true
+        viewModelScope.launch {
+            recordAudioAndEmitFrequencies().collect {
+                _frequencies.value = it
+            }
         }
     }
 
-    private fun calculateAmplitude(buffer: ShortArray): Float {
-        var sum = 0.0
-        for (sample in buffer) {
-            sum += abs(sample.toDouble())
-        }
-        val rms = sum / buffer.size
-        val db = if (rms > 0) 20 * log10(rms) else -Float.MAX_VALUE
-        return db.toFloat()
+    fun stopRecording() {
+        if (!isRecording) return
+
+        audioRecord.stop()
+        audioRecord.release()
+        isRecording = false
     }
 
-    private fun calculateFFT(buffer: FloatArray): FloatArray {
-        val fft = FloatFFT_1D(buffer.size.toLong())
-        fft.realForward(buffer)
-        return buffer
-    }
+    private fun recordAudioAndEmitFrequencies(): Flow<FloatArray> = flow {
+        val buffer = ByteBuffer.allocateDirect(BUFFER_SIZE)
+
+        while (isRecording) {
+            audioRecord.read(buffer, BUFFER_SIZE)
+            val audioData = FloatArray(FFT_SIZE)
+
+            for (i in 0 until FFT_SIZE) {
+                audioData[i] = buffer.getShort(i * 2).toFloat() / Short.MAX_VALUE
+            }
+
+            val audioDataDouble = audioData.map { it.toDouble() }.toDoubleArray()
+            fft.realForward(audioDataDouble)
+
+            val frequencies = FloatArray(FFT_SIZE / 2)
+            for (i in 0 until FFT_SIZE / 2) {
+                val re = audioDataDouble[2 * i]
+                val im = audioDataDouble[2 * i + 1]
+                val magnitude = sqrt(re * re + im * im).toFloat()
+
+                frequencies[i] = magnitude
+            }
+
+            emit(frequencies)
+        }
+    }.flowOn(Dispatchers.IO)
+
+    fun isRecording(): Boolean = isRecording
 
     override fun onCleared() {
-        _audioRecord?.stop()
-        _audioRecord?.release()
+        audioRecord.stop()
+        audioRecord.release()
         super.onCleared()
     }
 }
