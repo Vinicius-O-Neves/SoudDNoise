@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
@@ -55,9 +56,8 @@ fun AudioSpectrum(fastFourierTransformArray: FloatArray) {
                             val columnWidth = size.width / fastFourierTransformArray.size
 
                             audioSpectrumItem(
-                                color = getColorForAmplitude(amplitude),
                                 columnWidth = columnWidth,
-                                rowHeight = amplitude,
+                                amplitude = amplitude,
                                 index = index
                             )
                         }
@@ -69,23 +69,29 @@ fun AudioSpectrum(fastFourierTransformArray: FloatArray) {
 }
 
 private fun DrawScope.audioSpectrumItem(
-    color: Color,
     columnWidth: Float,
-    rowHeight: Float,
+    amplitude: Float,
     index: Int,
 ) {
+    val centerColor = getColorForAmplitude(amplitude / 1.5f)
+    val endColor = getColorForAmplitude(amplitude)
+
     drawRect(
-        color = color,
-        topLeft = Offset(columnWidth * index, size.height - rowHeight),
-        size = Size(columnWidth, rowHeight)
+        brush = Brush.verticalGradient(
+            colors = listOf(endColor, centerColor, Color.Green),
+            startY = size.height - amplitude,
+            endY = size.height
+        ),
+        topLeft = Offset(columnWidth * index, size.height - amplitude),
+        size = Size(columnWidth, amplitude)
     )
 }
 
 fun getColorForAmplitude(amplitude: Float): Color {
     return when {
-        amplitude < 20f -> Color.Blue
+        amplitude < 20f -> Color.Green
         amplitude < 40f -> Color.Cyan
-        amplitude < 60f -> Color.Green
+        amplitude < 60f -> Color.Blue
         amplitude < 80f -> Color.Yellow
         amplitude < 100f -> Color.Magenta
         else -> Color.Red
@@ -96,6 +102,6 @@ fun getColorForAmplitude(amplitude: Float): Color {
 @SoundDNoiseThemes
 fun AudioSpectrum_Preview() {
     SoundDNoiseTheme {
-        AudioSpectrum(floatArrayOf(30f, 50f, 120f, 85f, 100f, 10f, 30f))
+        AudioSpectrum(floatArrayOf(30f, 150f, 120f, 85f, 100f, 10f, 30f))
     }
 }
