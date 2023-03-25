@@ -2,15 +2,11 @@ package com.example.noise.ui_noise.viewmodel
 
 import android.media.AudioRecord
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noise.ui_noise.model.FrequencyState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.jtransforms.fft.DoubleFFT_1D
 import java.nio.ByteBuffer
@@ -26,7 +22,7 @@ class NoiseActivityViewModel : ViewModel() {
 
     private val fft = DoubleFFT_1D(FFT_SIZE.toLong())
 
-    var dbLevelsState = mutableStateOf(FrequencyState(frequencies = floatArrayOf(0f)))
+    var dbLevelsState = MutableStateFlow(FrequencyState(floatArrayOf(0f)))
 
     fun startRecording() {
         viewModelScope.launch {
@@ -76,7 +72,7 @@ class NoiseActivityViewModel : ViewModel() {
     }.flowOn(Dispatchers.Default)
 
     private fun setAudioDbLevels(levels: FloatArray) {
-        dbLevelsState = mutableStateOf(FrequencyState(frequencies = levels))
+        dbLevelsState.value = dbLevelsState.value.copy(frequencies = levels)
     }
 
     fun stopRecording() {
