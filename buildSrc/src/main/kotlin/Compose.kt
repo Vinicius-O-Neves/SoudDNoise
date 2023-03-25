@@ -27,4 +27,6 @@ object Compose {
     const val composeUITestManifest = "androidx.compose.ui:ui-test-manifest:$composeUiVersion"
 
     const val composeConstraintLayout = "androidx.constraintlayout:constraintlayout-compose:1.0.1"
+
+    const val composeRunTime = "androidx.compose.runtime:runtime:1.4.0"
 }

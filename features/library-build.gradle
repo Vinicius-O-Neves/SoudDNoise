@@ -59,6 +59,9 @@ dependencies {
     debugImplementation Compose.composeUITolling
     implementation Compose.composeUITollingPreview
     implementation Compose.composeMaterial
+    implementation Compose.composeRunTime
+    implementation("androidx.compose.runtime:runtime-livedata:1.4.0")
+    implementation("androidx.compose.runtime:runtime-rxjava2:1.4.0")
 
     testImplementation Testing.jUnit
     androidTestImplementation Testing.androidXJUnit
@@ -67,6 +70,9 @@ dependencies {
     debugImplementation Compose.composeUITollingTest
     debugImplementation Compose.composeUITestManifest
     implementation Compose.composeConstraintLayout
+
+    implementation Koin.koinCompose
+    implementation Koin.koinAndroid
     
     implementation(project(SharedModules.presentation))
 
