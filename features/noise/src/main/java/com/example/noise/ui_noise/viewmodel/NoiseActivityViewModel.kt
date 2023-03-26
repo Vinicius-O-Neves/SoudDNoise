@@ -103,9 +103,18 @@ class NoiseActivityViewModel : ViewModel() {
             }
         }
 
+        val average = if (amplitudes.average()
+                .toInt() > dbLevelsState.value.average + 5 || amplitudes.average()
+                .toInt() < dbLevelsState.value.average - 1
+        ) {
+            amplitudes.average().toInt()
+        } else {
+            dbLevelsState.value.average
+        }
+
         dbLevelsState.value = dbLevelsState.value.copy(
             frequencies = amplitudes.sliceArray(0 until 6),
-            average = amplitudes.average().toInt()
+            average = average
         )
     }
 

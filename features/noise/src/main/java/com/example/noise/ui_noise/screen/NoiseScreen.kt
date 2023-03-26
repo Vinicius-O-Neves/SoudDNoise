@@ -2,9 +2,12 @@ package com.example.noise.ui_noise.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import com.example.noise.ui_noise.components.AudioSpectrum
 import com.example.noise.ui_noise.model.FrequencyState
 import com.example.presentation.app.AppTheme
@@ -27,10 +30,26 @@ private fun NoiseScreenContent(fastFourierTransformArray: FrequencyState) {
             .background(AppTheme.colors.background)
             .fillMaxSize()
     ) {
+        Spacer(modifier = Modifier.weight(1f))
+
         Column(
-            verticalArrangement = Arrangement.Bottom,
-            modifier = Modifier.weight(1f).padding(bottom = AppSpacing.base).fillMaxWidth()
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(bottom = AppSpacing.base)
+                .fillMaxWidth()
         ) {
+            Text(
+                style = MaterialTheme.typography.h4.copy(
+                    color = AppTheme.colors.onBackground,
+                    fontWeight = FontWeight.Bold
+                ),
+                text = "${fastFourierTransformArray.average}".plus(" Db"),
+            )
+
+            Spacer(modifier = Modifier
+                .height(AppSpacing.xlarge))
+
             AudioSpectrum(
                 frequenciesArray = fastFourierTransformArray
             )
