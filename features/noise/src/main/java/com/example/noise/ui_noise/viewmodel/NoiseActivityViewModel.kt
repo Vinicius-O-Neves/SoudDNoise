@@ -13,8 +13,8 @@ import java.nio.ByteBuffer
 import kotlin.math.log10
 import kotlin.math.sqrt
 
-const val SAMPLE_RATE = 44100 // Sample rate in Hz
-const val FFT_SIZE = 512 // FFT size
+const val SAMPLE_RATE = 48000 // Sample rate in Hz
+const val FFT_SIZE = 1024 // FFT size
 const val BUFFER_SIZE = FFT_SIZE * 2 // Buffer size in bytes
 
 class NoiseActivityViewModel : ViewModel() {
@@ -22,7 +22,6 @@ class NoiseActivityViewModel : ViewModel() {
     var audioRecord: AudioRecord? = null
 
     private val fft = DoubleFFT_1D(FFT_SIZE.toLong())
-    private val dbRef = 32768.0 // Reference level for dBFS
 
     var dbLevelsState = MutableStateFlow(FrequencyState(doubleArrayOf(0.0)))
 
@@ -33,26 +32,20 @@ class NoiseActivityViewModel : ViewModel() {
                 audioRecord?.startRecording()
             }
 
-            while (isRecording) {
-                getDbLevels().catch {
-                    Log.d("frequencies", "error")
-                }.collect { dbLevels ->
-                    if (dbLevels.contentEquals(dbLevelsState.value.frequencies).not()) {
-                        setAudioDbLevels(levels = dbLevels)
-                    }
-                }
+            getMagnitudesFromRecordingAudio().catch {
+                Log.d("frequencies", "error")
+            }.collect { magnitudes ->
+                setAudioAmplitudes(magnitudes = magnitudes)
             }
         }
     }
 
-    private fun getDbLevels(): Flow<DoubleArray> = flow {
+    private fun getMagnitudesFromRecordingAudio(): Flow<DoubleArray> = flow {
         val buffer = ByteBuffer.allocateDirect(BUFFER_SIZE)
         val audioData = DoubleArray(FFT_SIZE)
-        val frequencies = DoubleArray(FFT_SIZE)
         val audioDataDouble = DoubleArray(FFT_SIZE * 2)
 
-        val averageWindow = 80 // Number of samples to use in moving average
-        val averageValues = DoubleArray(FFT_SIZE / 2)
+        val magnitudes = DoubleArray(FFT_SIZE)
 
         var dc = 0.0
         var count = 0
@@ -86,28 +79,30 @@ class NoiseActivityViewModel : ViewModel() {
             for (i in 0 until FFT_SIZE / 2) {
                 val real = audioDataDouble[2 * i]
                 val image = audioDataDouble[2 * i + 1]
-                val magnitude = sqrt(real * real + image * image).toFloat()
+                val magnitude = sqrt(real * real + image * image)
 
-                // Calculate the dB level
-                val dB = if (magnitude > 0) {
-                    20 * log10(magnitude.toDouble())
-                } else {
-                    0.0
-                }
-
-                // Add the dB value to the moving average window
-                averageValues[i] += (dB - averageValues[i]) / averageWindow
+                magnitudes[i] = magnitude
             }
 
-            // Copy the averaged values into the output array
-            System.arraycopy(averageValues, 0, frequencies, 0, averageValues.size)
-
-            emit(frequencies)
+            emit(magnitudes)
         }
     }.flowOn(Dispatchers.Default)
 
-    private fun setAudioDbLevels(levels: DoubleArray) {
-        dbLevelsState.value = dbLevelsState.value.copy(frequencies = levels)
+    private fun setAudioAmplitudes(magnitudes: DoubleArray) {
+        viewModelScope.launch(Dispatchers.Default) {
+            val amplitudes = DoubleArray(FFT_SIZE / 2)
+
+            for (i in amplitudes.indices) {
+                if (magnitudes[i] <= 0.0) {
+                    amplitudes[i] = -magnitudes[i]
+                } else {
+                    amplitudes[i] = 20 * log10(magnitudes[i])
+                }
+            }
+
+            dbLevelsState.value =
+                dbLevelsState.value.copy(frequencies = amplitudes, average = amplitudes.average().toInt())
+        }
     }
 
     fun stopRecording() {

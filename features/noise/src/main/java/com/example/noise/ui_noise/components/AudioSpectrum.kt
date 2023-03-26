@@ -13,14 +13,15 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import com.example.noise.ui_noise.model.FrequencyState
 import com.example.presentation.app.AppTheme
 import com.example.presentation.components.spacing.AppSpacing
 import com.example.presentation.sounddnoise.theme.SoundDNoiseTheme
 import com.example.presentation.sounddnoise.theme.SoundDNoiseThemes
-import kotlin.math.pow
 import kotlin.math.roundToLong
 
 @Composable
@@ -35,21 +36,27 @@ fun AudioSpectrum(modifier: Modifier = Modifier, frequenciesArray: FrequencyStat
                     color = AppTheme.colors.onBackground,
                     fontWeight = FontWeight.Bold
                 ),
-                text = "${frequenciesArray.frequencies.average().roundToLong()}".plus(" Db"),
+                text = "${frequenciesArray.average}".plus(" Db"),
             )
         }
 
         item {
-            Spacer(modifier = Modifier.height(frequenciesArray.frequencies.max().dp / 3))
+            Spacer(modifier = Modifier.height(frequenciesArray.frequencies.max().dp / 1.7f))
         }
 
         item {
-            Row(
-                modifier = Modifier.padding(top = AppSpacing.base)
+            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+            val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+            val canvasSize = min(screenWidth, screenHeight) - AppSpacing.base * 2
+
+            Box(
+                modifier = modifier
+                    .padding(horizontal = AppSpacing.base)
+                    .height(canvasSize),
+                contentAlignment = Alignment.Center
             ) {
                 Canvas(
-                    modifier = Modifier
-                        .weight(1f),
+                    modifier = Modifier.fillMaxSize(),
                     onDraw = {
                         frequenciesArray.frequencies.forEachIndexed { index, amplitude ->
                             val columnWidth = size.width / frequenciesArray.frequencies.size
@@ -72,8 +79,10 @@ private fun DrawScope.audioSpectrumItem(
     amplitude: Double,
     index: Int,
 ) {
+    val scaledAmplitude = (amplitude * 10).toFloat()
+
     val startColor = getColorForAmplitude(amplitude - amplitude)
-    val centerColor = getColorForAmplitude(amplitude / 2)
+    val centerColor = getColorForAmplitude(amplitude - 10)
     val endColor = getColorForAmplitude(amplitude)
 
     drawRect(
@@ -83,29 +92,21 @@ private fun DrawScope.audioSpectrumItem(
                 centerColor,
                 startColor
             ),
-            startY = size.height - amplitude.toFloat(),
+            startY = size.height - scaledAmplitude,
             endY = size.height
         ),
-        topLeft = Offset(columnWidth * index, size.height - amplitude.toFloat()),
-        size = Size(columnWidth, amplitude.toFloat().pow(10))
+        topLeft = Offset(
+            columnWidth * index,
+            size.height - scaledAmplitude / 2
+        ),
+        size = Size(columnWidth, scaledAmplitude),
     )
 }
 
 fun getColorForAmplitude(amplitude: Double): Color {
     return when {
-        amplitude < 10.0 -> Color(0xFF013F57)
-        amplitude < 20.0 -> Color(0xFF035E66)
-        amplitude < 30.0 -> Color(0xFF058066)
-        amplitude < 40.0 -> Color(0xFF079E7E)
         amplitude < 50.0 -> Color(0xFF07BB58)
-        amplitude < 60.0 -> Color(0xFF82BE4D)
-        amplitude < 70.0 -> Color(0xFF6FCA06)
-        amplitude < 80.0 -> Color(0xFF7D9C09)
-        amplitude < 90.0 -> Color(0xFFA3DF18)
         amplitude < 100.0 -> Color(0xFFD4FA00)
-        amplitude < 110.0 -> Color(0xFFBBB207)
-        amplitude < 120.0 -> Color(0xFFBB9D07)
-        amplitude < 140.0 -> Color(0xFFE9AB0E)
         amplitude < 150.0 -> Color(0xFFDF6203)
         amplitude < 170.0 -> Color(0xFFDF2F03)
         amplitude < 180.0 -> Color(0xFFB703DF)

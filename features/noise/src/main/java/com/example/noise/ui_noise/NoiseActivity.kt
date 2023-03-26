@@ -39,8 +39,8 @@ class NoiseActivity : BaseComponentActivity() {
     }
 
     override fun onDestroy() {
-        viewModel.stopRecording()
         super.onDestroy()
+        viewModel.stopRecording()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

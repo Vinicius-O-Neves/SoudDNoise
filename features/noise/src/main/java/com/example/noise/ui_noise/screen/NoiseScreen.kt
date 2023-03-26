@@ -1,10 +1,7 @@
 package com.example.noise.ui_noise.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +29,7 @@ private fun NoiseScreenContent(fastFourierTransformArray: FrequencyState) {
     ) {
         Column(
             verticalArrangement = Arrangement.Bottom,
-            modifier = Modifier.weight(1f).padding(bottom = AppSpacing.base)
+            modifier = Modifier.weight(1f).padding(bottom = AppSpacing.base).fillMaxWidth()
         ) {
             AudioSpectrum(
                 frequenciesArray = fastFourierTransformArray
