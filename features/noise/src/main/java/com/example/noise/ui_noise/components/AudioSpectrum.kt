@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import com.example.noise.ui_noise.model.FrequencyState
@@ -26,50 +27,41 @@ import kotlin.math.roundToLong
 
 @Composable
 fun AudioSpectrum(modifier: Modifier = Modifier, frequenciesArray: FrequencyState) {
-    LazyColumn(
+    Column(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom,
         modifier = modifier
     ) {
-        item {
-            Text(
-                style = MaterialTheme.typography.h4.copy(
-                    color = AppTheme.colors.onBackground,
-                    fontWeight = FontWeight.Bold
-                ),
-                text = "${frequenciesArray.average}".plus(" Db"),
-            )
-        }
+        Text(
+            style = MaterialTheme.typography.h4.copy(
+                color = AppTheme.colors.onBackground,
+                fontWeight = FontWeight.Bold
+            ),
+            text = "${frequenciesArray.average}".plus(" Db"),
+        )
 
-        item {
-            Spacer(modifier = Modifier.height(frequenciesArray.frequencies.max().dp / 1.7f))
-        }
+        Spacer(modifier = Modifier.height(frequenciesArray.frequencies.max().dp))
 
-        item {
-            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-            val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-            val canvasSize = min(screenWidth, screenHeight) - AppSpacing.base * 2
+        Box(
+            modifier = modifier
+                .padding(top = AppSpacing.xlarge)
+                .height(100.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Canvas(
+                modifier = Modifier.fillMaxSize(),
+                onDraw = {
+                    frequenciesArray.frequencies.forEachIndexed { index, amplitude ->
+                        val columnWidth = size.width / frequenciesArray.frequencies.size
 
-            Box(
-                modifier = modifier
-                    .padding(horizontal = AppSpacing.base)
-                    .height(canvasSize),
-                contentAlignment = Alignment.Center
-            ) {
-                Canvas(
-                    modifier = Modifier.fillMaxSize(),
-                    onDraw = {
-                        frequenciesArray.frequencies.forEachIndexed { index, amplitude ->
-                            val columnWidth = size.width / frequenciesArray.frequencies.size
-
-                            audioSpectrumItem(
-                                columnWidth = columnWidth,
-                                amplitude = amplitude,
-                                index = index
-                            )
-                        }
+                        audioSpectrumItem(
+                            columnWidth = columnWidth,
+                            amplitude = amplitude,
+                            index = index
+                        )
                     }
-                )
-            }
+                }
+            )
         }
     }
 }
@@ -79,7 +71,7 @@ private fun DrawScope.audioSpectrumItem(
     amplitude: Double,
     index: Int,
 ) {
-    val scaledAmplitude = (amplitude * 10).toFloat()
+    val scaledAmplitude = (amplitude * 5).toFloat()
 
     val startColor = getColorForAmplitude(amplitude - amplitude)
     val centerColor = getColorForAmplitude(amplitude - 10)
@@ -97,7 +89,7 @@ private fun DrawScope.audioSpectrumItem(
         ),
         topLeft = Offset(
             columnWidth * index,
-            size.height - scaledAmplitude / 2
+            size.height - scaledAmplitude
         ),
         size = Size(columnWidth, scaledAmplitude),
     )

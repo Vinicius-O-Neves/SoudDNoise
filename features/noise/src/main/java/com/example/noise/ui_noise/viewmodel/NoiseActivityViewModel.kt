@@ -10,11 +10,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.jtransforms.fft.DoubleFFT_1D
 import java.nio.ByteBuffer
-import kotlin.math.log10
+import kotlin.math.pow
 import kotlin.math.sqrt
 
 const val SAMPLE_RATE = 48000 // Sample rate in Hz
-const val FFT_SIZE = 1024 // FFT size
+const val FFT_SIZE = 512 // FFT size
 const val BUFFER_SIZE = FFT_SIZE * 2 // Buffer size in bytes
 
 class NoiseActivityViewModel : ViewModel() {
@@ -22,6 +22,9 @@ class NoiseActivityViewModel : ViewModel() {
     var audioRecord: AudioRecord? = null
 
     private val fft = DoubleFFT_1D(FFT_SIZE.toLong())
+    val audioDataDouble = DoubleArray(FFT_SIZE * 2)
+    val magnitudes = DoubleArray(FFT_SIZE)
+    val amplitudes = DoubleArray(FFT_SIZE / 2)
 
     var dbLevelsState = MutableStateFlow(FrequencyState(doubleArrayOf(0.0)))
 
@@ -35,7 +38,12 @@ class NoiseActivityViewModel : ViewModel() {
             getMagnitudesFromRecordingAudio().catch {
                 Log.d("frequencies", "error")
             }.collect { magnitudes ->
-                setAudioAmplitudes(magnitudes = magnitudes)
+                var previousMagnitudes = DoubleArray(FFT_SIZE)
+
+                if (previousMagnitudes.contentEquals(magnitudes).not()) {
+                    setAudioAmplitudes(magnitudes = magnitudes)
+                    previousMagnitudes = magnitudes
+                }
             }
         }
     }
@@ -43,9 +51,6 @@ class NoiseActivityViewModel : ViewModel() {
     private fun getMagnitudesFromRecordingAudio(): Flow<DoubleArray> = flow {
         val buffer = ByteBuffer.allocateDirect(BUFFER_SIZE)
         val audioData = DoubleArray(FFT_SIZE)
-        val audioDataDouble = DoubleArray(FFT_SIZE * 2)
-
-        val magnitudes = DoubleArray(FFT_SIZE)
 
         var dc = 0.0
         var count = 0
@@ -54,6 +59,7 @@ class NoiseActivityViewModel : ViewModel() {
             audioRecord?.read(buffer, BUFFER_SIZE)
 
             for (i in 0 until FFT_SIZE) {
+                buffer.rewind()
                 audioData[i] = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE
 
                 // Remove DC bias
@@ -89,20 +95,18 @@ class NoiseActivityViewModel : ViewModel() {
     }.flowOn(Dispatchers.Default)
 
     private fun setAudioAmplitudes(magnitudes: DoubleArray) {
-        viewModelScope.launch(Dispatchers.Default) {
-            val amplitudes = DoubleArray(FFT_SIZE / 2)
-
-            for (i in amplitudes.indices) {
-                if (magnitudes[i] <= 0.0) {
-                    amplitudes[i] = -magnitudes[i]
-                } else {
-                    amplitudes[i] = 20 * log10(magnitudes[i])
-                }
+        for (i in amplitudes.indices) {
+            if (magnitudes[i] <= 0.0) {
+                amplitudes[i] = -magnitudes[i]
+            } else {
+                amplitudes[i] = 10.0.pow(magnitudes[i] / 20.0)
             }
-
-            dbLevelsState.value =
-                dbLevelsState.value.copy(frequencies = amplitudes, average = amplitudes.average().toInt())
         }
+
+        dbLevelsState.value = dbLevelsState.value.copy(
+            frequencies = amplitudes.sliceArray(0 until 6),
+            average = amplitudes.average().toInt()
+        )
     }
 
     fun stopRecording() {
