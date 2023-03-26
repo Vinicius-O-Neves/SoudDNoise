@@ -1,10 +1,7 @@
 package com.example.noise.ui_noise.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -23,12 +20,14 @@ import com.example.presentation.app.AppTheme
 import com.example.presentation.components.spacing.AppSpacing
 import com.example.presentation.sounddnoise.theme.SoundDNoiseTheme
 import com.example.presentation.sounddnoise.theme.SoundDNoiseThemes
-import kotlin.math.roundToInt
+import kotlin.math.pow
+import kotlin.math.roundToLong
 
 @Composable
-fun AudioSpectrum(frequenciesArray: FrequencyState) {
+fun AudioSpectrum(modifier: Modifier = Modifier, frequenciesArray: FrequencyState) {
     LazyColumn(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
     ) {
         item {
             Text(
@@ -36,21 +35,21 @@ fun AudioSpectrum(frequenciesArray: FrequencyState) {
                     color = AppTheme.colors.onBackground,
                     fontWeight = FontWeight.Bold
                 ),
-                text = frequenciesArray.frequencies.average().roundToInt().toString().plus(" Db"),
-                modifier = Modifier
-                    .padding(bottom = frequenciesArray.frequencies.max().dp / 3)
-
+                text = "${frequenciesArray.frequencies.average().roundToLong()}".plus(" Db"),
             )
         }
 
         item {
+            Spacer(modifier = Modifier.height(frequenciesArray.frequencies.max().dp / 3))
+        }
+
+        item {
             Row(
-                modifier = Modifier.padding(top = AppSpacing.base),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.Center
+                modifier = Modifier.padding(top = AppSpacing.base)
             ) {
                 Canvas(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .weight(1f),
                     onDraw = {
                         frequenciesArray.frequencies.forEachIndexed { index, amplitude ->
                             val columnWidth = size.width / frequenciesArray.frequencies.size
@@ -70,52 +69,46 @@ fun AudioSpectrum(frequenciesArray: FrequencyState) {
 
 private fun DrawScope.audioSpectrumItem(
     columnWidth: Float,
-    amplitude: Float,
+    amplitude: Double,
     index: Int,
 ) {
     val startColor = getColorForAmplitude(amplitude - amplitude)
-    val nextStartColor = getColorForAmplitude(amplitude - amplitude / 2)
-    val centerColor = getColorForAmplitude(amplitude - amplitude / 1.7f)
-    val nearCenterColor = getColorForAmplitude(amplitude - amplitude / 1.5f)
-    val nextCenterColor = getColorForAmplitude(amplitude - 10)
+    val centerColor = getColorForAmplitude(amplitude / 2)
     val endColor = getColorForAmplitude(amplitude)
 
     drawRect(
         brush = Brush.verticalGradient(
             colors = listOf(
                 endColor,
-                nextCenterColor,
-                nearCenterColor,
                 centerColor,
-                nextStartColor,
                 startColor
             ),
-            startY = size.height - amplitude,
+            startY = size.height - amplitude.toFloat(),
             endY = size.height
         ),
-        topLeft = Offset(columnWidth * index / 1.2f, size.height - amplitude),
-        size = Size(columnWidth / 1.2f, amplitude)
+        topLeft = Offset(columnWidth * index, size.height - amplitude.toFloat()),
+        size = Size(columnWidth, amplitude.toFloat().pow(10))
     )
 }
 
-fun getColorForAmplitude(amplitude: Float): Color {
+fun getColorForAmplitude(amplitude: Double): Color {
     return when {
-        amplitude < 10f -> Color(0xFF013F57)
-        amplitude < 20f -> Color(0xFF035E66)
-        amplitude < 30f -> Color(0xFF058066)
-        amplitude < 40f -> Color(0xFF079E7E)
-        amplitude < 50f -> Color(0xFF07BB58)
-        amplitude < 60f -> Color(0xFF82BE4D)
-        amplitude < 70f -> Color(0xFF6FCA06)
-        amplitude < 80f -> Color(0xFF7D9C09)
-        amplitude < 90f -> Color(0xFFA3DF18)
-        amplitude < 100f -> Color(0xFFD4FA00)
-        amplitude < 110f -> Color(0xFFBBB207)
-        amplitude < 120f -> Color(0xFFBB9D07)
-        amplitude < 140f -> Color(0xFFE9AB0E)
-        amplitude < 150f -> Color(0xFFDF6203)
-        amplitude < 170f -> Color(0xFFDF2F03)
-        amplitude < 180f -> Color(0xFFB703DF)
+        amplitude < 10.0 -> Color(0xFF013F57)
+        amplitude < 20.0 -> Color(0xFF035E66)
+        amplitude < 30.0 -> Color(0xFF058066)
+        amplitude < 40.0 -> Color(0xFF079E7E)
+        amplitude < 50.0 -> Color(0xFF07BB58)
+        amplitude < 60.0 -> Color(0xFF82BE4D)
+        amplitude < 70.0 -> Color(0xFF6FCA06)
+        amplitude < 80.0 -> Color(0xFF7D9C09)
+        amplitude < 90.0 -> Color(0xFFA3DF18)
+        amplitude < 100.0 -> Color(0xFFD4FA00)
+        amplitude < 110.0 -> Color(0xFFBBB207)
+        amplitude < 120.0 -> Color(0xFFBB9D07)
+        amplitude < 140.0 -> Color(0xFFE9AB0E)
+        amplitude < 150.0 -> Color(0xFFDF6203)
+        amplitude < 170.0 -> Color(0xFFDF2F03)
+        amplitude < 180.0 -> Color(0xFFB703DF)
         else -> Color(0xFF8303DF)
     }
 }
@@ -125,8 +118,8 @@ fun getColorForAmplitude(amplitude: Float): Color {
 fun AudioSpectrum_Previews() {
     SoundDNoiseTheme {
         AudioSpectrum(
-            FrequencyState(
-                frequencies = floatArrayOf(1.2f, 190f, 12f, 0f, 25f)
+            frequenciesArray = FrequencyState(
+                frequencies = doubleArrayOf(1.2, 190.0, 12.2, 0.1, 25.0)
             )
         )
     }

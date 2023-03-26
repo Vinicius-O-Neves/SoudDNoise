@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.noise.ui_noise.screen.NoiseScreen
+import com.example.noise.ui_noise.viewmodel.BUFFER_SIZE
 import com.example.noise.ui_noise.viewmodel.NoiseActivityViewModel
 import com.example.noise.ui_noise.viewmodel.SAMPLE_RATE
 import com.example.presentation.app.AppTheme
@@ -70,19 +71,15 @@ class NoiseActivity : BaseComponentActivity() {
     @SuppressLint("MissingPermission")
     private fun initAudioRecord() {
         lifecycleScope.launch {
-            val minBufferSize = AudioRecord.getMinBufferSize(
-                SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
-            )
-
             viewModel.audioRecord = AudioRecord(
                 MediaRecorder.AudioSource.MIC,
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                minBufferSize
+                BUFFER_SIZE
             )
 
-            delay(1000)
+            delay(100)
 
             viewModel.startRecording()
         }
