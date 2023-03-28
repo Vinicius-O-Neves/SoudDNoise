@@ -10,10 +10,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.jtransforms.fft.DoubleFFT_1D
 import java.nio.ByteBuffer
+import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-const val SAMPLE_RATE = 48000 // Sample rate in Hz
+const val SAMPLE_RATE = 24100 // Sample rate in Hz
 const val FFT_SIZE = 512 // FFT size
 const val BUFFER_SIZE = FFT_SIZE * 2 // Buffer size in bytes
 
@@ -86,7 +87,6 @@ class NoiseActivityViewModel : ViewModel() {
                 val real = audioDataDouble[2 * i]
                 val image = audioDataDouble[2 * i + 1]
                 val magnitude = sqrt(real * real + image * image)
-
                 magnitudes[i] = magnitude
             }
 
@@ -96,25 +96,18 @@ class NoiseActivityViewModel : ViewModel() {
 
     private fun setAudioAmplitudes(magnitudes: DoubleArray) {
         for (i in amplitudes.indices) {
-            if (magnitudes[i] <= 0.0) {
-                amplitudes[i] = -magnitudes[i]
+            val magnitude = magnitudes[i]
+            if (magnitude <= 0.0) {
+                amplitudes[i] = -magnitude
             } else {
-                amplitudes[i] = 10.0.pow(magnitudes[i] / 20.0)
+                val db = 20 * log10(magnitude)
+                amplitudes[i] = 10.0.pow(db / 20.0)
             }
-        }
-
-        val average = if (amplitudes.average()
-                .toInt() > dbLevelsState.value.average + 5 || amplitudes.average()
-                .toInt() < dbLevelsState.value.average - 1
-        ) {
-            amplitudes.average().toInt()
-        } else {
-            dbLevelsState.value.average
         }
 
         dbLevelsState.value = dbLevelsState.value.copy(
             frequencies = amplitudes.sliceArray(0 until 6),
-            average = average
+            average = amplitudes.average().toInt()
         )
     }
 

@@ -1,9 +1,9 @@
 package com.example.noise.ui_noise.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -12,11 +12,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.noise.ui_noise.model.FrequencyState
-import com.example.presentation.app.AppTheme
-import com.example.presentation.components.spacing.AppSpacing
 import com.example.presentation.sounddnoise.theme.SoundDNoiseTheme
 import com.example.presentation.sounddnoise.theme.SoundDNoiseThemes
 
