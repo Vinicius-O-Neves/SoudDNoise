@@ -1,6 +1,5 @@
 package com.example.noise.ui_noise.viewmodel
 
-import android.content.Context
 import android.media.AudioRecord
 import android.os.CountDownTimer
 import android.util.Log
@@ -37,13 +36,12 @@ class NoiseActivityViewModel : ViewModel() {
 
     private var _previousDbAverage = 0
 
-    private var dbAverageDownloadCountDown: CountDownTimer? = null
+    private var dbAverageCountDown: CountDownTimer? = null
     private val countDownInterval = 1000L
 
     companion object {
         const val MAX_TIME_TO_WAIT_FOR_ANALYSES = 1
     }
-
 
     fun startRecording() {
         viewModelScope.launch {
@@ -120,24 +118,27 @@ class NoiseActivityViewModel : ViewModel() {
             frequencies = amplitudes.sliceArray(0 until 6),
         )
 
-        if (dbAverageDownloadCountDown == null) {
+        if (dbAverageCountDown == null) {
             startDbAverageDownloadCountDown()
             _dbAverage.value = amplitudes.average().toInt()
         }
     }
 
     private fun startDbAverageDownloadCountDown() {
-        dbAverageDownloadCountDown = null
+        dbAverageCountDown = null
 
-        dbAverageDownloadCountDown =
-            object : CountDownTimer(countDownInterval * MAX_TIME_TO_WAIT_FOR_ANALYSES, countDownInterval) {
+        dbAverageCountDown =
+            object : CountDownTimer(
+                countDownInterval * MAX_TIME_TO_WAIT_FOR_ANALYSES,
+                countDownInterval
+            ) {
                 override fun onFinish() {
                     if (_previousDbAverage != _dbAverage.value) {
                         _dbAverage.value = amplitudes.average().toInt()
 
                         _previousDbAverage = _dbAverage.value
                     }
-                    dbAverageDownloadCountDown = null
+                    dbAverageCountDown = null
                 }
 
                 override fun onTick(time: Long) {}
