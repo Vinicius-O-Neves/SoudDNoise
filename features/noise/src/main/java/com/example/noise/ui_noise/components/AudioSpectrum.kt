@@ -21,7 +21,7 @@ import com.example.presentation.sounddnoise.theme.SoundDNoiseThemes
 fun AudioSpectrum(modifier: Modifier = Modifier, frequenciesArray: FrequencyState) {
     Box(
         modifier = modifier
-            .height(frequenciesArray.frequencies.max().dp),
+            .height(100.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         Canvas(
@@ -70,11 +70,11 @@ private fun DrawScope.audioSpectrumItem(
 
 fun getColorForAmplitude(amplitude: Double): Color {
     return when {
-        amplitude < 50.0 -> Color(0xFF07BB58)
-        amplitude < 100.0 -> Color(0xFFD4FA00)
-        amplitude < 150.0 -> Color(0xFFDF6203)
-        amplitude < 170.0 -> Color(0xFFDF2F03)
-        amplitude < 180.0 -> Color(0xFFB703DF)
+        amplitude < 30.0 -> Color(0xFF07BB58)
+        amplitude < 50.0 -> Color(0xFFD4FA00)
+        amplitude < 70.0 -> Color(0xFFDF6203)
+        amplitude < 100.0 -> Color(0xFFDF2F03)
+        amplitude < 150.0 -> Color(0xFFB703DF)
         else -> Color(0xFF8303DF)
     }
 }

@@ -16,14 +16,15 @@ import com.example.presentation.sounddnoise.theme.SoundDNoiseTheme
 import com.example.presentation.sounddnoise.theme.SoundDNoiseThemes
 
 @Composable
-fun NoiseScreen(frequenciesArray: FrequencyState) {
+fun NoiseScreen(frequencyState: FrequencyState, dbAverage: Int) {
     NoiseScreenContent(
-        fastFourierTransformArray = frequenciesArray
+        frequenciesArray = frequencyState,
+        dbAverage = dbAverage
     )
 }
 
 @Composable
-private fun NoiseScreenContent(fastFourierTransformArray: FrequencyState) {
+private fun NoiseScreenContent(frequenciesArray: FrequencyState, dbAverage: Int) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -44,14 +45,14 @@ private fun NoiseScreenContent(fastFourierTransformArray: FrequencyState) {
                     color = AppTheme.colors.onBackground,
                     fontWeight = FontWeight.Bold
                 ),
-                text = "${fastFourierTransformArray.average}".plus(" Db"),
+                text = "$dbAverage".plus(" Db"),
             )
 
             Spacer(modifier = Modifier
                 .height(AppSpacing.xlarge))
 
             AudioSpectrum(
-                frequenciesArray = fastFourierTransformArray
+                frequenciesArray = frequenciesArray
             )
         }
     }
@@ -62,9 +63,10 @@ private fun NoiseScreenContent(fastFourierTransformArray: FrequencyState) {
 private fun NoiseScreen_Previews() {
     SoundDNoiseTheme {
         NoiseScreen(
-            FrequencyState(
+            frequencyState = FrequencyState(
                 frequencies = doubleArrayOf(1.2, 190.0, 12.2, 0.1, 25.0)
-            )
+            ),
+            dbAverage = 0
         )
     }
 }

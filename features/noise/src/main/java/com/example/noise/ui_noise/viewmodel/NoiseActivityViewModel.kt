@@ -1,7 +1,10 @@
 package com.example.noise.ui_noise.viewmodel
 
+import android.content.Context
 import android.media.AudioRecord
+import android.os.CountDownTimer
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noise.ui_noise.model.FrequencyState
@@ -16,18 +19,31 @@ import kotlin.math.sqrt
 
 const val SAMPLE_RATE = 24100 // Sample rate in Hz
 const val FFT_SIZE = 512 // FFT size
-const val BUFFER_SIZE = FFT_SIZE * 2 // Buffer size in bytes
+const val BUFFER_SIZE = FFT_SIZE // Buffer size in bytes
 
 class NoiseActivityViewModel : ViewModel() {
     private var isRecording = false
     var audioRecord: AudioRecord? = null
 
     private val fft = DoubleFFT_1D(FFT_SIZE.toLong())
-    val audioDataDouble = DoubleArray(FFT_SIZE * 2)
-    val magnitudes = DoubleArray(FFT_SIZE)
-    val amplitudes = DoubleArray(FFT_SIZE / 2)
+    private val audioDataDouble = DoubleArray(FFT_SIZE * 2)
+    private val magnitudes = DoubleArray(FFT_SIZE)
+    private val amplitudes = DoubleArray(FFT_SIZE / 2)
 
     var dbLevelsState = MutableStateFlow(FrequencyState(doubleArrayOf(0.0)))
+
+    private var _dbAverage = mutableStateOf(0)
+    val dbAverage get() = _dbAverage
+
+    private var _previousDbAverage = 0
+
+    private var dbAverageDownloadCountDown: CountDownTimer? = null
+    private val countDownInterval = 1000L
+
+    companion object {
+        const val MAX_TIME_TO_WAIT_FOR_ANALYSES = 1
+    }
+
 
     fun startRecording() {
         viewModelScope.launch {
@@ -39,12 +55,7 @@ class NoiseActivityViewModel : ViewModel() {
             getMagnitudesFromRecordingAudio().catch {
                 Log.d("frequencies", "error")
             }.collect { magnitudes ->
-                var previousMagnitudes = DoubleArray(FFT_SIZE)
-
-                if (previousMagnitudes.contentEquals(magnitudes).not()) {
-                    setAudioAmplitudes(magnitudes = magnitudes)
-                    previousMagnitudes = magnitudes
-                }
+                setAudioAmplitudes(magnitudes = magnitudes)
             }
         }
     }
@@ -57,10 +68,10 @@ class NoiseActivityViewModel : ViewModel() {
         var count = 0
 
         while (isRecording) {
-            audioRecord?.read(buffer, BUFFER_SIZE)
+            buffer.rewind()
+            audioRecord?.read(buffer, FFT_SIZE * 2)
 
             for (i in 0 until FFT_SIZE) {
-                buffer.rewind()
                 audioData[i] = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE
 
                 // Remove DC bias
@@ -107,15 +118,39 @@ class NoiseActivityViewModel : ViewModel() {
 
         dbLevelsState.value = dbLevelsState.value.copy(
             frequencies = amplitudes.sliceArray(0 until 6),
-            average = amplitudes.average().toInt()
         )
+
+        if (dbAverageDownloadCountDown == null) {
+            startDbAverageDownloadCountDown()
+            _dbAverage.value = amplitudes.average().toInt()
+        }
+    }
+
+    private fun startDbAverageDownloadCountDown() {
+        dbAverageDownloadCountDown = null
+
+        dbAverageDownloadCountDown =
+            object : CountDownTimer(countDownInterval * MAX_TIME_TO_WAIT_FOR_ANALYSES, countDownInterval) {
+                override fun onFinish() {
+                    if (_previousDbAverage != _dbAverage.value) {
+                        _dbAverage.value = amplitudes.average().toInt()
+
+                        _previousDbAverage = _dbAverage.value
+                    }
+                    dbAverageDownloadCountDown = null
+                }
+
+                override fun onTick(time: Long) {}
+
+            }.start()
     }
 
     fun stopRecording() {
         if (isRecording) {
+            isRecording = false
             audioRecord?.stop()
             audioRecord?.release()
-            isRecording = false
+            audioRecord = null
         }
     }
 }

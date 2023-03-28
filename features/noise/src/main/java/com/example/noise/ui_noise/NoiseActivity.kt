@@ -48,7 +48,8 @@ class NoiseActivity : BaseComponentActivity() {
         setContent {
             AppTheme {
                 NoiseScreen(
-                    frequenciesArray = viewModel.dbLevelsState.collectAsState().value
+                    frequencyState = viewModel.dbLevelsState.collectAsState().value,
+                    dbAverage = viewModel.dbAverage.value
                 )
             }
         }
