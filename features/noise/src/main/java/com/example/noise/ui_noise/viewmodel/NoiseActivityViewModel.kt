@@ -18,8 +18,8 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 const val SAMPLE_RATE = 24100 // Sample rate in Hz
-const val FFT_SIZE = 512 // FFT size
-const val BUFFER_SIZE = FFT_SIZE // Buffer size in bytes
+const val FFT_SIZE = 248 // FFT size
+const val BUFFER_SIZE = FFT_SIZE * 3// Buffer size in bytes
 
 class NoiseActivityViewModel : ViewModel() {
     private var isRecording = false
