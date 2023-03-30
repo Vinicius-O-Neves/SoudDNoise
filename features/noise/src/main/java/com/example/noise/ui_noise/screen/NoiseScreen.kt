@@ -14,17 +14,21 @@ import com.example.presentation.app.AppTheme
 import com.example.presentation.components.spacing.AppSpacing
 import com.example.presentation.sounddnoise.theme.SoundDNoiseTheme
 import com.example.presentation.sounddnoise.theme.SoundDNoiseThemes
+import java.util.*
 
 @Composable
-fun NoiseScreen(frequencyState: FrequencyState, dbAverage: Int) {
+fun NoiseScreen(frequencyState: FrequencyState, audioDecibel: Double) {
     NoiseScreenContent(
-        frequenciesArray = frequencyState,
-        dbAverage = dbAverage
+        frequenciesState = frequencyState,
+        audioDecibel = audioDecibel
     )
 }
 
 @Composable
-private fun NoiseScreenContent(frequenciesArray: FrequencyState, dbAverage: Int) {
+private fun NoiseScreenContent(frequenciesState: FrequencyState, audioDecibel: Double) {
+    val formattedAudioDecibel =
+        String.format(locale = Locale.getDefault(), format = "%.2f", audioDecibel)
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -45,14 +49,16 @@ private fun NoiseScreenContent(frequenciesArray: FrequencyState, dbAverage: Int)
                     color = AppTheme.colors.onBackground,
                     fontWeight = FontWeight.Bold
                 ),
-                text = "$dbAverage".plus(" Db"),
+                text = formattedAudioDecibel.plus(" Db"),
             )
 
-            Spacer(modifier = Modifier
-                .height(AppSpacing.xlarge))
+            Spacer(
+                modifier = Modifier
+                    .height(AppSpacing.xlarge)
+            )
 
             AudioSpectrum(
-                frequenciesArray = frequenciesArray
+                frequenciesArray = frequenciesState.frequencies
             )
         }
     }
@@ -66,7 +72,7 @@ private fun NoiseScreen_Previews() {
             frequencyState = FrequencyState(
                 frequencies = doubleArrayOf(1.2, 190.0, 12.2, 0.1, 25.0)
             ),
-            dbAverage = 0
+            audioDecibel = 40.023214
         )
     }
 }

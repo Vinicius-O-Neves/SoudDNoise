@@ -3,7 +3,6 @@ package com.example.noise.ui_noise.viewmodel
 import android.media.AudioRecord
 import android.os.CountDownTimer
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noise.ui_noise.model.FrequencyState
@@ -29,12 +28,11 @@ class NoiseActivityViewModel : ViewModel() {
     private val magnitudes = DoubleArray(FFT_SIZE)
     private val amplitudes = DoubleArray(FFT_SIZE / 2)
 
-    var dbLevelsState = MutableStateFlow(FrequencyState(doubleArrayOf(0.0)))
+    val frequenciesState = MutableStateFlow(FrequencyState(doubleArrayOf(0.0)))
 
-    private var _dbAverage = mutableStateOf(0)
-    val dbAverage get() = _dbAverage
+    val audioDecibel = MutableStateFlow(0.0)
 
-    private var _previousDbAverage = 0
+    private var _previousDbAverage = 0.0
 
     private var dbAverageCountDown: CountDownTimer? = null
     private val countDownInterval = 1000L
@@ -114,29 +112,28 @@ class NoiseActivityViewModel : ViewModel() {
             }
         }
 
-        dbLevelsState.value = dbLevelsState.value.copy(
+        frequenciesState.value = frequenciesState.value.copy(
             frequencies = amplitudes.sliceArray(0 until 6),
         )
 
         if (dbAverageCountDown == null) {
             startDbAverageDownloadCountDown()
-            _dbAverage.value = amplitudes.average().toInt()
+
+            audioDecibel.value = 20 * log10 (amplitudes.max())
         }
     }
 
     private fun startDbAverageDownloadCountDown() {
-        dbAverageCountDown = null
-
         dbAverageCountDown =
             object : CountDownTimer(
                 countDownInterval * MAX_TIME_TO_WAIT_FOR_ANALYSES,
                 countDownInterval
             ) {
                 override fun onFinish() {
-                    if (_previousDbAverage != _dbAverage.value) {
-                        _dbAverage.value = amplitudes.average().toInt()
+                    if (_previousDbAverage != audioDecibel.value) {
+                        audioDecibel.value = 20 * log10 (amplitudes.max())
 
-                        _previousDbAverage = _dbAverage.value
+                        _previousDbAverage = audioDecibel.value
                     }
                     dbAverageCountDown = null
                 }

@@ -1,7 +1,7 @@
 package com.example.noise.ui_noise.model
 
 data class FrequencyState(
-    val frequencies: DoubleArray,
+    val frequencies: DoubleArray
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

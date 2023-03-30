@@ -40,10 +40,12 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion Compose.composeCompilerVersion
     }
+
     packagingOptions {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
+        exclude 'META-INF/*'
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/AL2.0'
+        exclude 'META-INF/LGPL2.1'
     }
 }
 
@@ -73,7 +75,7 @@ dependencies {
 
     implementation Koin.koinCompose
     implementation Koin.koinAndroid
-    
+
     implementation(project(SharedModules.presentation))
 
 }
