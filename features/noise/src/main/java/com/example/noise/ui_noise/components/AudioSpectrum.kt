@@ -45,19 +45,15 @@ private fun DrawScope.audioSpectrumItem(
     amplitude: Double,
     index: Int,
 ) {
-    val startColor = getColorForAmplitude(amplitude - amplitude)
-    val centerColor = getColorForAmplitude(amplitude / 2.5)
-    val nextToEndColor = getColorForAmplitude(amplitude / 1.6)
-    val endColor = getColorForAmplitude(amplitude)
+    val gradientList = mutableListOf(getColorForAmplitude(10.0), getColorForAmplitude(20.0))
+
+    for (i in 30..amplitude.toInt() step 10) {
+        gradientList.add(0, getColorForAmplitude(i.toDouble()))
+    }
 
     drawRect(
         brush = Brush.verticalGradient(
-            colors = listOf(
-                endColor,
-                nextToEndColor,
-                centerColor,
-                startColor
-            ),
+            colors = gradientList,
             startY = size.height - amplitude.toFloat(),
             endY = size.height
         ),
@@ -71,8 +67,11 @@ private fun DrawScope.audioSpectrumItem(
 
 fun getColorForAmplitude(amplitude: Double): Color {
     return when {
-        amplitude < 30.0 -> Color(0xFF07BB58)
+        amplitude < 10.0 -> Color(0xFF088A43)
+        amplitude < 20.0 -> Color(0xFF09C75F)
+        amplitude < 30.0 -> Color(0xFFB9D80A)
         amplitude < 50.0 -> Color(0xFFD4FA00)
+        amplitude < 60.0 -> Color(0xFFF7C306)
         amplitude < 70.0 -> Color(0xFFDF6203)
         amplitude < 100.0 -> Color(0xFFDF2F03)
         amplitude < 150.0 -> Color(0xFFB703DF)
