@@ -46,12 +46,12 @@ class NoiseActivityViewModel : ViewModel() {
             if (isRecording.not()) {
                 isRecording = true
                 audioRecord?.startRecording()
-            }
 
-            getMagnitudesFromRecordingAudio().catch {
-                Log.d("frequencies", "error")
-            }.collect { magnitudes ->
-                setAudioAmplitudes(magnitudes = magnitudes)
+                getMagnitudesFromRecordingAudio().catch {
+                    Log.d("frequencies", "error")
+                }.collect { magnitudes ->
+                    setAudioAmplitudes(magnitudes = magnitudes)
+                }
             }
         }
     }
@@ -102,45 +102,50 @@ class NoiseActivityViewModel : ViewModel() {
     }.flowOn(Dispatchers.Default)
 
     private fun setAudioAmplitudes(magnitudes: DoubleArray) {
-        for (i in amplitudes.indices) {
-            val magnitude = magnitudes[i]
-            if (magnitude <= 0.0) {
-                amplitudes[i] = -magnitude
-            } else {
-                val db = 20 * log10(magnitude)
-                amplitudes[i] = 10.0.pow(db / 20.0)
+        viewModelScope.launch {
+            for (i in amplitudes.indices) {
+                val magnitude = magnitudes[i]
+
+                if (magnitude <= 0.0) {
+                    amplitudes[i] = -magnitude
+                } else {
+                    val db = 20 * log10(magnitude)
+                    amplitudes[i] = 10.0.pow(db / 20.0)
+                }
             }
-        }
 
-        frequenciesState.value = frequenciesState.value.copy(
-            frequencies = amplitudes.sliceArray(0 until 6),
-        )
+            frequenciesState.value = frequenciesState.value.copy(
+                frequencies = amplitudes.sliceArray(0 until 6),
+            )
 
-        if (dbAverageCountDown == null) {
-            startDbAverageDownloadCountDown()
+            if (dbAverageCountDown == null) {
+                startDbAverageDownloadCountDown()
 
-            audioDecibel.value = 20 * log10 (amplitudes.max())
+                audioDecibel.value = 20 * log10(amplitudes.max())
+            }
         }
     }
 
     private fun startDbAverageDownloadCountDown() {
-        dbAverageCountDown =
-            object : CountDownTimer(
-                countDownInterval * MAX_TIME_TO_WAIT_FOR_ANALYSES,
-                countDownInterval
-            ) {
-                override fun onFinish() {
-                    if (_previousDbAverage != audioDecibel.value) {
-                        audioDecibel.value = 20 * log10 (amplitudes.max())
+        viewModelScope.launch {
+            dbAverageCountDown =
+                object : CountDownTimer(
+                    countDownInterval * MAX_TIME_TO_WAIT_FOR_ANALYSES,
+                    countDownInterval
+                ) {
+                    override fun onFinish() {
+                        if (_previousDbAverage != audioDecibel.value) {
+                            audioDecibel.value = 20 * log10(amplitudes.max())
 
-                        _previousDbAverage = audioDecibel.value
+                            _previousDbAverage = audioDecibel.value
+                        }
+                        dbAverageCountDown = null
                     }
-                    dbAverageCountDown = null
-                }
 
-                override fun onTick(time: Long) {}
+                    override fun onTick(time: Long) {}
 
-            }.start()
+                }.start()
+        }
     }
 
     fun stopRecording() {
