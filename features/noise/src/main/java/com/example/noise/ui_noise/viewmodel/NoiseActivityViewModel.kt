@@ -1,127 +1,115 @@
 package com.example.noise.ui_noise.viewmodel
 
+import android.media.AudioFormat
 import android.media.AudioRecord
 import android.os.CountDownTimer
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.noise.ui_noise.NoiseState
 import com.example.noise.ui_noise.model.FrequencyState
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import org.jtransforms.fft.DoubleFFT_1D
-import java.nio.ByteBuffer
+import kotlinx.coroutines.withContext
+import org.apache.commons.math3.transform.DftNormalization
+import org.apache.commons.math3.transform.FastFourierTransformer
+import org.apache.commons.math3.transform.TransformType
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-const val SAMPLE_RATE = 24100 // Sample rate in Hz
-const val FFT_SIZE = 248 // FFT size
-const val BUFFER_SIZE = FFT_SIZE * 3// Buffer size in bytes
+const val SAMPLE_RATE = 48000
+const val FFT_SIZE = 512
+const val BUFFER_SIZE = FFT_SIZE / 2
 
 class NoiseActivityViewModel : ViewModel() {
-    private var isRecording = false
-    var audioRecord: AudioRecord? = null
-
-    private val fft = DoubleFFT_1D(FFT_SIZE.toLong())
-    private val audioDataDouble = DoubleArray(FFT_SIZE * 2)
-    private val magnitudes = DoubleArray(FFT_SIZE)
-    private val amplitudes = DoubleArray(FFT_SIZE / 2)
-
-    val frequenciesState = MutableStateFlow(FrequencyState(doubleArrayOf(0.0)))
-
-    val audioDecibel = MutableStateFlow(0.0)
-
-    private var _previousDbAverage = 0.0
-
-    private var dbAverageCountDown: CountDownTimer? = null
-    private val countDownInterval = 1000L
 
     companion object {
         const val MAX_TIME_TO_WAIT_FOR_ANALYSES = 1
     }
 
+    private var isRecording = false
+    var audioRecord: AudioRecord? = null
+    private val recordingScope = CoroutineScope(Dispatchers.IO)
+    private val minBufferSize: Int by lazy {
+        AudioRecord.getMinBufferSize(
+            SAMPLE_RATE,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT
+        )
+    }
+    private val buffer = ShortArray(minBufferSize)
+    private val fftTransformer = FastFourierTransformer(DftNormalization.UNITARY)
+    private var fftBuffer = ShortArray(BUFFER_SIZE)
+
+    val frequenciesState = MutableStateFlow(FrequencyState(doubleArrayOf(0.0)))
+
+    val audioDecibel = MutableStateFlow(0.0)
+
+    var noiseState = MutableStateFlow(NoiseState.LOW)
+
+    private val amplitudes = DoubleArray(FFT_SIZE / 2)
+
+    private var dbAverageCountDown: CountDownTimer? = null
+    private val countDownInterval = 1000L
+
     fun startRecording() {
-        viewModelScope.launch {
+        recordingScope.launch(Dispatchers.IO) {
             if (isRecording.not()) {
                 isRecording = true
                 audioRecord?.startRecording()
 
-                getMagnitudesFromRecordingAudio().catch {
-                    Log.d("frequencies", "error")
-                }.collect { magnitudes ->
-                    setAudioAmplitudes(magnitudes = magnitudes)
+                while (isRecording) {
+                    getMagnitudesFromRecordingAudio().catch {
+                        Log.d("frequencies", "error")
+                    }.collect { magnitudes ->
+                        setAudioAmplitudes(magnitudes = magnitudes)
+                    }
                 }
             }
         }
     }
 
     private fun getMagnitudesFromRecordingAudio(): Flow<DoubleArray> = flow {
-        val buffer = ByteBuffer.allocateDirect(BUFFER_SIZE)
-        val audioData = DoubleArray(FFT_SIZE)
-
-        var dc = 0.0
-        var count = 0
-
-        while (isRecording) {
-            buffer.rewind()
-            audioRecord?.read(buffer, FFT_SIZE * 2)
-
-            for (i in 0 until FFT_SIZE) {
-                audioData[i] = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE
-
-                // Remove DC bias
-                dc += audioData[i]
-                count++
-            }
-
-            if (count == FFT_SIZE) {
-                dc /= count
-                for (i in 0 until FFT_SIZE) {
-                    audioData[i] -= dc
-                }
-                count = 0
-                dc = 0.0
-            }
-
-            fft.realForward(audioDataDouble.apply {
-                for (i in audioData.indices) {
-                    this[i] = audioData[i]
-                }
-            })
-
-            for (i in 0 until FFT_SIZE / 2) {
-                val real = audioDataDouble[2 * i]
-                val image = audioDataDouble[2 * i + 1]
-                val magnitude = sqrt(real * real + image * image)
-                magnitudes[i] = magnitude
-            }
-
-            emit(magnitudes)
+        withContext(Dispatchers.IO) {
+            audioRecord?.read(buffer, 0, minBufferSize)
         }
+
+        fftBuffer = buffer.copyOf(BUFFER_SIZE)
+        val fftResult = fftTransformer.transform(
+            fftBuffer.map { it.toDouble() }.toDoubleArray(),
+            TransformType.FORWARD
+        )
+
+        val magnitudes = DoubleArray(FFT_SIZE / 2)
+        for (i in 0 until FFT_SIZE / 2) {
+            val real = fftResult[i].real
+            val image = fftResult[i].imaginary
+            magnitudes[i] = sqrt(real * real + image * image)
+        }
+
+        emit(magnitudes)
     }.flowOn(Dispatchers.Default)
 
     private fun setAudioAmplitudes(magnitudes: DoubleArray) {
-        viewModelScope.launch {
+        recordingScope.launch(Dispatchers.Default) {
             for (i in amplitudes.indices) {
                 val magnitude = magnitudes[i]
 
-                if (magnitude <= 0.0) {
-                    amplitudes[i] = -magnitude
-                } else {
+                if (magnitude > 0.0) {
                     val db = 20 * log10(magnitude)
                     amplitudes[i] = 10.0.pow(db / 20.0)
                 }
             }
 
             frequenciesState.value = frequenciesState.value.copy(
-                frequencies = amplitudes.sliceArray(0 until 6),
+                frequencies = amplitudes.sliceArray(6 until 12),
             )
 
             if (dbAverageCountDown == null) {
                 startDbAverageDownloadCountDown()
-
-                audioDecibel.value = 20 * log10(amplitudes.max())
             }
         }
     }
@@ -134,11 +122,16 @@ class NoiseActivityViewModel : ViewModel() {
                     countDownInterval
                 ) {
                     override fun onFinish() {
-                        if (_previousDbAverage != audioDecibel.value) {
-                            audioDecibel.value = 20 * log10(amplitudes.max())
+                        audioDecibel.value = convertMagnitudeToDb()
 
-                            _previousDbAverage = audioDecibel.value
+                        if (audioDecibel.value <= 30) {
+                            updateNoiseState(state = NoiseState.LOW)
+                        } else if (audioDecibel.value < 55) {
+                            updateNoiseState(state = NoiseState.MEDIUM)
+                        } else {
+                            updateNoiseState(state = NoiseState.HIGH)
                         }
+
                         dbAverageCountDown = null
                     }
 
@@ -146,6 +139,16 @@ class NoiseActivityViewModel : ViewModel() {
 
                 }.start()
         }
+    }
+
+    private fun convertMagnitudeToDb(): Double {
+        val rms = sqrt(amplitudes.map { it * it }.average())
+
+        return 20.0 * log10(rms)
+    }
+
+    private fun updateNoiseState(state: NoiseState) {
+        noiseState.value = state
     }
 
     fun stopRecording() {
