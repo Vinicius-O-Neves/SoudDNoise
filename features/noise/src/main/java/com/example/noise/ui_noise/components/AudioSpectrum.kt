@@ -1,9 +1,9 @@
 package com.example.noise.ui_noise.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -12,22 +12,46 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.noise.ui_noise.model.FrequencyState
+import com.example.presentation.app.AppTheme
+import com.example.presentation.components.spacing.AppSpacing
 import com.example.presentation.sounddnoise.theme.SoundDNoiseTheme
 import com.example.presentation.sounddnoise.theme.SoundDNoiseThemes
+import java.util.*
 
 @Composable
-fun AudioSpectrum(modifier: Modifier = Modifier, frequenciesArray: DoubleArray) {
-    Box(
+fun AudioSpectrum(
+    modifier: Modifier = Modifier,
+    frequenciesState: () -> FrequencyState,
+    audioDecibel: Double
+) {
+    val frequencies = frequenciesState().frequencies
+
+    val formattedAudioDecibel =
+        String.format(locale = Locale.getDefault(), format = "%.2f", audioDecibel)
+
+    Column(
+        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
-            .height(130.dp),
-        contentAlignment = Alignment.BottomCenter
     ) {
+        Text(
+            style = MaterialTheme.typography.h4.copy(
+                color = AppTheme.colors.onBackground, fontWeight = FontWeight.Bold
+            ),
+            text = formattedAudioDecibel.plus(" Db"),
+            modifier = Modifier.padding(bottom = 250.dp)
+        )
+
         Canvas(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .heightIn(max = AppSpacing.small)
+                .fillMaxWidth(),
             onDraw = {
-                frequenciesArray.forEachIndexed { index, amplitude ->
-                    val columnWidth = size.width / frequenciesArray.size
+                frequencies.forEachIndexed { index, amplitude ->
+                    val columnWidth = size.width / frequencies.size
 
                     audioSpectrumItem(
                         columnWidth = columnWidth,
@@ -59,9 +83,9 @@ private fun DrawScope.audioSpectrumItem(
         ),
         topLeft = Offset(
             columnWidth * index,
-            size.height - amplitude.toFloat() * 3
+            size.height - amplitude.toFloat() / 90
         ),
-        size = Size(columnWidth, amplitude.toFloat() * 3),
+        size = Size(columnWidth, amplitude.toFloat() / 90),
     )
 }
 
@@ -75,7 +99,9 @@ fun getColorForAmplitude(amplitude: Double): Color {
         amplitude < 70.0 -> Color(0xFFDF6203)
         amplitude < 100.0 -> Color(0xFFDF2F03)
         amplitude < 150.0 -> Color(0xFFB703DF)
-        else -> Color(0xFF8303DF)
+        amplitude < 160.0 -> Color(0xFFA403DF)
+        amplitude < 170.0 -> Color(0xFF5E0396)
+        else -> Color(0xFF3A0808)
     }
 }
 
@@ -84,7 +110,12 @@ fun getColorForAmplitude(amplitude: Double): Color {
 fun AudioSpectrum_Previews() {
     SoundDNoiseTheme {
         AudioSpectrum(
-            frequenciesArray = doubleArrayOf(1.2, 190.0, 12.2, 0.1, 25.0)
+            frequenciesState = {
+                FrequencyState(
+                    frequencies = doubleArrayOf(1.2, 190.0, 12.2, 0.1, 25.0)
+                )
+            },
+            audioDecibel = 40.0
         )
     }
 }
