@@ -5,10 +5,11 @@
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <uses-feature android:name="android.hardware.microphone" android:required="true" />
+    <uses-feature android:name="android.hardware.microphone" android:required="true"/>
 
-    <application>
-
+    <application
+        android:largeHeap="true"
+        android:hardwareAccelerated="true">
         <activity
             android:name="com.example.noise.ui_noise.NoiseActivity"
             android:allowBackup="true"
