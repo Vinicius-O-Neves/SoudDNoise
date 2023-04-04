@@ -91,16 +91,16 @@ private fun DrawScope.audioSpectrumItem(
 
 fun getColorForAmplitude(amplitude: Double): Color {
     return when {
-        amplitude < 10.0 -> Color(0xFF088A43)
-        amplitude < 20.0 -> Color(0xFF09C75F)
-        amplitude < 30.0 -> Color(0xFFB9D80A)
-        amplitude < 50.0 -> Color(0xFFD4FA00)
-        amplitude < 60.0 -> Color(0xFFF7C306)
-        amplitude < 70.0 -> Color(0xFFDF6203)
-        amplitude < 100.0 -> Color(0xFFDF2F03)
-        amplitude < 150.0 -> Color(0xFFB703DF)
-        amplitude < 160.0 -> Color(0xFFA403DF)
-        amplitude < 170.0 -> Color(0xFF5E0396)
+        amplitude <= 10.0 -> Color(0xFF088A43)
+        amplitude <= 20.0 -> Color(0xFF09C75F)
+        amplitude <= 30.0 -> Color(0xFFB9D80A)
+        amplitude <= 50.0 -> Color(0xFFD4FA00)
+        amplitude <= 60.0 -> Color(0xFFF7C306)
+        amplitude <= 70.0 -> Color(0xFFDF6203)
+        amplitude <= 100.0 -> Color(0xFFDF2F03)
+        amplitude <= 150.0 -> Color(0xFFB703DF)
+        amplitude <= 160.0 -> Color(0xFFA403DF)
+        amplitude <= 170.0 -> Color(0xFF5E0396)
         else -> Color(0xFF3A0808)
     }
 }
