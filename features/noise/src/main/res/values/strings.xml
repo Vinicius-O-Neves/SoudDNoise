@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="warning_low">The surrounding volume is not a risk to your hearing.</string>
+    <string name="warning_medium">Please consider reducing your exposure to protect your hearing.</string>
+    <string name="warning_high">Please lower your exposure immediately to avoid permanent hearing damage.</string>
+</resources>
