@@ -124,9 +124,9 @@ class NoiseActivityViewModel : ViewModel() {
                     override fun onFinish() {
                         audioDecibel.value = convertMagnitudeToDb()
 
-                        if (audioDecibel.value <= 30) {
+                        if (audioDecibel.value <= 44) {
                             updateNoiseState(state = NoiseState.LOW)
-                        } else if (audioDecibel.value < 55) {
+                        } else if (audioDecibel.value < 70) {
                             updateNoiseState(state = NoiseState.MEDIUM)
                         } else {
                             updateNoiseState(state = NoiseState.HIGH)
