@@ -39,17 +39,19 @@ private fun NoiseScreenContent(
             NoiseState.HIGH -> R.raw.ic_head_explosion
         }
 
-        AppLottieAnimation(
-            lottieFile = lottieAnimation,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(500.dp)
-                .padding(AppSpacing.base)
-        )
+        Column(
+            verticalArrangement = Arrangement.Top
+        ) {
+            AppLottieAnimation(
+                lottieFile = lottieAnimation,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp)
+                    .padding(AppSpacing.base)
+            )
+        }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        Column {
+        Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.weight(1f)) {
             AudioSpectrum(
                 frequenciesState = frequenciesState, audioDecibel = audioDecibel
             )
