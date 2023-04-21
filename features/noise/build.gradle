@@ -3,4 +3,6 @@ apply from: "$rootDir/features/library-build.gradle"
 dependencies {
     implementation 'org.apache.commons:commons-math3:3.6.1'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
+    implementation 'com.google.firebase:firebase-analytics-ktx:20.0.1'
+    implementation 'com.google.firebase:firebase-database-ktx:20.0.1'
 }

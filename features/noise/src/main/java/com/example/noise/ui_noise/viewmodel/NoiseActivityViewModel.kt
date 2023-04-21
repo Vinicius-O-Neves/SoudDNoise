@@ -1,5 +1,6 @@
 package com.example.noise.ui_noise.viewmodel
 
+import android.content.IntentSender.OnFinished
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.os.CountDownTimer
@@ -28,6 +29,15 @@ class NoiseActivityViewModel : ViewModel() {
 
     companion object {
         const val MAX_TIME_TO_WAIT_FOR_ANALYSES = 1
+        const val  MAX_TIME_TO_WAIT_FOR_AVERAGE_CALCULATION = 300 // Value of 5minutes
+    }
+
+    private val database = Firebase.database
+
+    private fun sendToFirebase(avgDb: Double){
+        val ref = database.getReference("average_db")
+
+        ref.push().setValue(avgDb)
     }
 
     private var isRecording = false
@@ -51,6 +61,7 @@ class NoiseActivityViewModel : ViewModel() {
     var noiseState = MutableStateFlow(NoiseState.LOW)
 
     private val amplitudes = DoubleArray(FFT_SIZE / 2)
+    private val decibelValue = mutableListOf<Double>() // Array to store the DB values
 
     private var dbAverageCountDown: CountDownTimer? = null
     private val countDownInterval = 1000L
@@ -131,7 +142,7 @@ class NoiseActivityViewModel : ViewModel() {
                         } else {
                             updateNoiseState(state = NoiseState.HIGH)
                         }
-
+                        decibelValue.add(audioDecibel.value) // add the DB values to the array
                         dbAverageCountDown = null
                     }
 
@@ -140,6 +151,23 @@ class NoiseActivityViewModel : ViewModel() {
                 }.start()
         }
     }
+
+    private fun startDbAverageTimer(){
+        //timer of 5 minutes
+        object:  CountDownTimer(
+            countDownInterval * MAX_TIME_TO_WAIT_FOR_AVERAGE_CALCULATION,
+            countDownInterval){
+            override fun onFinish() {
+                val avgDb = decibelValue.average() // calculate the average decibels every 5 minutes
+                reference.setValue(avgDb) //sends to Firebase
+                decibelValue.clear() //clears the list to start the timer again
+            }
+
+            override fun onTick(time: Long) {}
+
+        }.start()
+    }
+
 
     private fun convertMagnitudeToDb(): Double {
         val rms = sqrt(amplitudes.map { it * it }.average())
