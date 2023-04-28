@@ -8,9 +8,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noise.ui_noise.NoiseState
 import com.example.noise.ui_noise.model.FrequencyState
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.apache.commons.math3.transform.DftNormalization
@@ -28,6 +34,14 @@ class NoiseActivityViewModel : ViewModel() {
 
     companion object {
         const val MAX_TIME_TO_WAIT_FOR_ANALYSES = 1
+        const val MAX_TIME_TO_WAIT_FOR_AVERAGE_CALCULATION = 300 // Value of 5minutes
+    }
+
+    private val database = Firebase.firestore
+
+    private fun sendAverageDbToFirebase(averageDb: Double) {
+        val userRef = database.collection("data").document("average_db")
+        userRef.set(mapOf("averageValue" to averageDb))
     }
 
     private var isRecording = false
@@ -51,8 +65,10 @@ class NoiseActivityViewModel : ViewModel() {
     var noiseState = MutableStateFlow(NoiseState.LOW)
 
     private val amplitudes = DoubleArray(FFT_SIZE / 2)
+    private val decibelValue = mutableListOf<Double>() // Array to store the DB values
 
     private var dbAverageCountDown: CountDownTimer? = null
+    private var saveAverageDbCountDown: CountDownTimer? = null
     private val countDownInterval = 1000L
 
     fun startRecording() {
@@ -122,6 +138,10 @@ class NoiseActivityViewModel : ViewModel() {
                     countDownInterval
                 ) {
                     override fun onFinish() {
+                        if (saveAverageDbCountDown == null) {
+                            startDbAverageTimer()
+                        }
+
                         audioDecibel.value = convertMagnitudeToDb()
 
                         if (audioDecibel.value <= 44) {
@@ -131,7 +151,7 @@ class NoiseActivityViewModel : ViewModel() {
                         } else {
                             updateNoiseState(state = NoiseState.HIGH)
                         }
-
+                        decibelValue.add(audioDecibel.value) // add the DB values to the array
                         dbAverageCountDown = null
                     }
 
@@ -140,6 +160,27 @@ class NoiseActivityViewModel : ViewModel() {
                 }.start()
         }
     }
+
+    private fun startDbAverageTimer() {
+        saveAverageDbCountDown = object : CountDownTimer(
+            countDownInterval * MAX_TIME_TO_WAIT_FOR_AVERAGE_CALCULATION,
+            countDownInterval
+        ) {
+            override fun onFinish() {
+                val averageDb =
+                    decibelValue.average() // calculate the average decibels every 5 minutes
+
+                sendAverageDbToFirebase(averageDb = averageDb)
+
+                decibelValue.clear() //clears the list to start the timer again
+                saveAverageDbCountDown = null
+            }
+
+            override fun onTick(time: Long) {}
+
+        }.start()
+    }
+
 
     private fun convertMagnitudeToDb(): Double {
         val rms = sqrt(amplitudes.map { it * it }.average())
