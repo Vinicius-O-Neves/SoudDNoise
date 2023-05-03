@@ -1,5 +1,7 @@
 package com.example.noise.ui_noise.viewmodel
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.os.CountDownTimer
@@ -8,6 +10,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noise.ui_noise.NoiseState
 import com.example.noise.ui_noise.model.FrequencyState
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationToken
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.android.gms.tasks.OnTokenCanceledListener
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +30,9 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.math3.transform.DftNormalization
 import org.apache.commons.math3.transform.FastFourierTransformer
 import org.apache.commons.math3.transform.TransformType
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -39,19 +50,14 @@ class NoiseActivityViewModel : ViewModel() {
 
     private val database = Firebase.firestore
 
-    private fun sendAverageDbToFirebase(averageDb: Double) {
-        val userRef = database.collection("data").document("average_db")
-        userRef.set(mapOf("averageValue" to averageDb))
-    }
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     private var isRecording = false
     var audioRecord: AudioRecord? = null
     private val recordingScope = CoroutineScope(Dispatchers.IO)
     private val minBufferSize: Int by lazy {
         AudioRecord.getMinBufferSize(
-            SAMPLE_RATE,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
+            SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
         )
     }
     private val buffer = ShortArray(minBufferSize)
@@ -70,6 +76,40 @@ class NoiseActivityViewModel : ViewModel() {
     private var dbAverageCountDown: CountDownTimer? = null
     private var saveAverageDbCountDown: CountDownTimer? = null
     private val countDownInterval = 1000L
+
+    fun initLocation(context: Context) {
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    @SuppressLint("MissingPermission")
+    fun fetchLastLocation() {
+        fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY,
+            object : CancellationToken() {
+                override fun onCanceledRequested(p0: OnTokenCanceledListener): CancellationToken =
+                    CancellationTokenSource().token
+
+                override fun isCancellationRequested(): Boolean = false
+
+            }).addOnSuccessListener { location ->
+            if (location != null) {
+                sendLastLocationToFirebase(
+                    lat = location.latitude, long = location.longitude
+                )
+            }
+        }
+    }
+
+    private fun sendAverageDbToFirebase(averageDb: Double) {
+        val userRef = database.collection("data").document("average_db")
+        userRef.set(mapOf("averageValue" to averageDb))
+    }
+
+    private fun sendLastLocationToFirebase(lat: Double, long: Double) {
+        val userRef = database.collection("data").document("emergency_location")
+        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+
+        userRef.update(mapOf(currentDate.toString() to "lat: $lat, long: $long"))
+    }
 
     fun startRecording() {
         recordingScope.launch(Dispatchers.IO) {
@@ -95,8 +135,7 @@ class NoiseActivityViewModel : ViewModel() {
 
         fftBuffer = buffer.copyOf(BUFFER_SIZE)
         val fftResult = fftTransformer.transform(
-            fftBuffer.map { it.toDouble() }.toDoubleArray(),
-            TransformType.FORWARD
+            fftBuffer.map { it.toDouble() }.toDoubleArray(), TransformType.FORWARD
         )
 
         val magnitudes = DoubleArray(FFT_SIZE / 2)
@@ -132,39 +171,36 @@ class NoiseActivityViewModel : ViewModel() {
 
     private fun startDbAverageDownloadCountDown() {
         viewModelScope.launch {
-            dbAverageCountDown =
-                object : CountDownTimer(
-                    countDownInterval * MAX_TIME_TO_WAIT_FOR_ANALYSES,
-                    countDownInterval
-                ) {
-                    override fun onFinish() {
-                        if (saveAverageDbCountDown == null) {
-                            startDbAverageTimer()
-                        }
-
-                        audioDecibel.value = convertMagnitudeToDb()
-
-                        if (audioDecibel.value <= 44) {
-                            updateNoiseState(state = NoiseState.LOW)
-                        } else if (audioDecibel.value < 70) {
-                            updateNoiseState(state = NoiseState.MEDIUM)
-                        } else {
-                            updateNoiseState(state = NoiseState.HIGH)
-                        }
-                        decibelValue.add(audioDecibel.value) // add the DB values to the array
-                        dbAverageCountDown = null
+            dbAverageCountDown = object : CountDownTimer(
+                countDownInterval * MAX_TIME_TO_WAIT_FOR_ANALYSES, countDownInterval
+            ) {
+                override fun onFinish() {
+                    if (saveAverageDbCountDown == null) {
+                        startDbAverageTimer()
                     }
 
-                    override fun onTick(time: Long) {}
+                    audioDecibel.value = convertMagnitudeToDb()
 
-                }.start()
+                    if (audioDecibel.value <= 44) {
+                        updateNoiseState(state = NoiseState.LOW)
+                    } else if (audioDecibel.value < 70) {
+                        updateNoiseState(state = NoiseState.MEDIUM)
+                    } else {
+                        updateNoiseState(state = NoiseState.HIGH)
+                    }
+                    decibelValue.add(audioDecibel.value) // add the DB values to the array
+                    dbAverageCountDown = null
+                }
+
+                override fun onTick(time: Long) {}
+
+            }.start()
         }
     }
 
     private fun startDbAverageTimer() {
         saveAverageDbCountDown = object : CountDownTimer(
-            countDownInterval * MAX_TIME_TO_WAIT_FOR_AVERAGE_CALCULATION,
-            countDownInterval
+            countDownInterval * MAX_TIME_TO_WAIT_FOR_AVERAGE_CALCULATION, countDownInterval
         ) {
             override fun onFinish() {
                 val averageDb =

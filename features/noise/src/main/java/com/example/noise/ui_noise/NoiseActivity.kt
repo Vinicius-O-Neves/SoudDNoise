@@ -30,11 +30,16 @@ class NoiseActivity : BaseComponentActivity() {
     private val viewModel: NoiseActivityViewModel by viewModel()
 
     private val registerPermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allPermissionsGranted = permissions.entries.all {
+            it.value
+        }
+
+        if (allPermissionsGranted) {
+            viewModel.initLocation(this)
+
             initAudioRecord()
-            viewModel.startRecording()
         }
     }
 
@@ -50,7 +55,8 @@ class NoiseActivity : BaseComponentActivity() {
                 NoiseScreen(
                     frequencyState = viewModel.frequenciesState.collectAsState().value,
                     audioDecibel = viewModel.audioDecibel.collectAsState().value,
-                    noiseState = viewModel.noiseState.collectAsState().value
+                    noiseState = viewModel.noiseState.collectAsState().value,
+                    onHelpClick = ::onHelpClick
                 )
             }
         }
@@ -62,9 +68,17 @@ class NoiseActivity : BaseComponentActivity() {
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            registerPermission.launch(Manifest.permission.RECORD_AUDIO)
+            registerPermission.launch(
+                arrayOf(
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
         } else {
             initAudioRecord()
+
+            viewModel.initLocation(this)
         }
 
         return super.onCreateView(name, context, attrs)
@@ -85,6 +99,10 @@ class NoiseActivity : BaseComponentActivity() {
 
             viewModel.startRecording()
         }
+    }
+
+    private fun onHelpClick() {
+        viewModel.fetchLastLocation()
     }
 
     override fun setupViews() {}
