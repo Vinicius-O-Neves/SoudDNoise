@@ -2,6 +2,7 @@ package com.example.noise.ui_noise.viewmodel
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.location.Location
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.os.CountDownTimer
@@ -45,7 +46,7 @@ class NoiseActivityViewModel : ViewModel() {
 
     companion object {
         const val MAX_TIME_TO_WAIT_FOR_ANALYSES = 1
-        const val MAX_TIME_TO_WAIT_FOR_AVERAGE_CALCULATION = 300 // Value of 5minutes
+        const val MAX_TIME_TO_WAIT_FOR_AVERAGE_CALCULATION = 5 // Value of 5minutes
     }
 
     private val database = Firebase.firestore
@@ -81,8 +82,25 @@ class NoiseActivityViewModel : ViewModel() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
     }
 
+    private fun sendAverageDbToFirebase(averageDb: Double, lastLocation: Location?) {
+        val userRef = database.collection("data").document("average_db")
+        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+
+        lastLocation?.let {
+            userRef.update(
+                mapOf(
+                    "lat: ${lastLocation.latitude} long: ${lastLocation.longitude}" to averageDb
+                )
+            )
+        }
+    }
+
     @SuppressLint("MissingPermission")
-    fun fetchLastLocation() {
+    fun sendLastEmergencyLocationToFirebase() {
+        val userRef = database.collection("data").document("emergency_location")
+
+        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+
         fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY,
             object : CancellationToken() {
                 override fun onCanceledRequested(p0: OnTokenCanceledListener): CancellationToken =
@@ -91,24 +109,8 @@ class NoiseActivityViewModel : ViewModel() {
                 override fun isCancellationRequested(): Boolean = false
 
             }).addOnSuccessListener { location ->
-            if (location != null) {
-                sendLastLocationToFirebase(
-                    lat = location.latitude, long = location.longitude
-                )
-            }
+            userRef.update(mapOf(currentDate.toString() to "lat: ${location.latitude}, long: ${location.longitude}"))
         }
-    }
-
-    private fun sendAverageDbToFirebase(averageDb: Double) {
-        val userRef = database.collection("data").document("average_db")
-        userRef.set(mapOf("averageValue" to averageDb))
-    }
-
-    private fun sendLastLocationToFirebase(lat: Double, long: Double) {
-        val userRef = database.collection("data").document("emergency_location")
-        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
-
-        userRef.update(mapOf(currentDate.toString() to "lat: $lat, long: $long"))
     }
 
     fun startRecording() {
@@ -198,6 +200,7 @@ class NoiseActivityViewModel : ViewModel() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun startDbAverageTimer() {
         saveAverageDbCountDown = object : CountDownTimer(
             countDownInterval * MAX_TIME_TO_WAIT_FOR_AVERAGE_CALCULATION, countDownInterval
@@ -206,7 +209,16 @@ class NoiseActivityViewModel : ViewModel() {
                 val averageDb =
                     decibelValue.average() // calculate the average decibels every 5 minutes
 
-                sendAverageDbToFirebase(averageDb = averageDb)
+                fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY,
+                    object : CancellationToken() {
+                        override fun onCanceledRequested(p0: OnTokenCanceledListener): CancellationToken =
+                            CancellationTokenSource().token
+
+                        override fun isCancellationRequested(): Boolean = false
+
+                    }).addOnSuccessListener { location ->
+                    sendAverageDbToFirebase(averageDb = averageDb, lastLocation = location)
+                }
 
                 decibelValue.clear() //clears the list to start the timer again
                 saveAverageDbCountDown = null

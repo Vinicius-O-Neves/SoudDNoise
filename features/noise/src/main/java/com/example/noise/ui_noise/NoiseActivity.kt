@@ -29,6 +29,12 @@ class NoiseActivity : BaseComponentActivity() {
 
     private val viewModel: NoiseActivityViewModel by viewModel()
 
+    private val permissions = listOf(
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    )
+
     private val registerPermission = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -63,22 +69,19 @@ class NoiseActivity : BaseComponentActivity() {
     }
 
     override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            registerPermission.launch(
-                arrayOf(
-                    Manifest.permission.RECORD_AUDIO,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+        permissions.forEach { permission ->
+            if (ActivityCompat.checkSelfPermission(
+                    this, permission
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                registerPermission.launch(
+                    permissions.toTypedArray()
                 )
-            )
-        } else {
-            initAudioRecord()
+            } else {
+                initAudioRecord()
 
-            viewModel.initLocation(this)
+                viewModel.initLocation(this)
+            }
         }
 
         return super.onCreateView(name, context, attrs)
@@ -95,14 +98,14 @@ class NoiseActivity : BaseComponentActivity() {
                 BUFFER_SIZE
             )
 
-            delay(100)
+            delay(120)
 
             viewModel.startRecording()
         }
     }
 
     private fun onHelpClick() {
-        viewModel.fetchLastLocation()
+        viewModel.sendLastEmergencyLocationToFirebase()
     }
 
     override fun setupViews() {}
