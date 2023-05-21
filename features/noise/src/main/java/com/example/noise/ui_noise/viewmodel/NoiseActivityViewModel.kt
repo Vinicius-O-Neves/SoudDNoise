@@ -83,13 +83,18 @@ class NoiseActivityViewModel : ViewModel() {
     }
 
     private fun sendAverageDbToFirebase(averageDb: Double, lastLocation: Location?) {
-        val userRef = database.collection("data").document("average_db")
-        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+        val userRef = database
+            .collection("data")
+            .document("average_db")
+            .collection("latitudes")
+            .document(lastLocation?.latitude.toString())
+            .collection("longitudes")
+            .document(lastLocation?.longitude.toString())
 
         lastLocation?.let {
-            userRef.update(
+            userRef.set(
                 mapOf(
-                    "lat: ${lastLocation.latitude} long: ${lastLocation.longitude}" to averageDb
+                    "averageDb" to averageDb
                 )
             )
         }
@@ -217,7 +222,35 @@ class NoiseActivityViewModel : ViewModel() {
                         override fun isCancellationRequested(): Boolean = false
 
                     }).addOnSuccessListener { location ->
-                    sendAverageDbToFirebase(averageDb = averageDb, lastLocation = location)
+                    val userRef = database
+                        .collection("data")
+                        .document("average_db")
+                        .collection("latitudes")
+                        .document(location?.latitude.toString())
+                        .collection("longitudes")
+                        .document(location?.longitude.toString())
+
+                    userRef.get().addOnSuccessListener { snapshot ->
+                        snapshot.data.let { data ->
+                            val averageDbFromDatabase = data?.entries?.map {
+                                it.value
+                            }
+
+                            if (averageDbFromDatabase?.get(0) == null) {
+                                sendAverageDbToFirebase(
+                                    averageDb = averageDb,
+                                    lastLocation = location
+                                )
+                            } else {
+                                averageDbFromDatabase[0]?.let { averageFromDatabase ->
+                                    sendAverageDbToFirebase(
+                                        averageDb = (averageDb + averageFromDatabase.toString().toDouble()) / 2,
+                                        lastLocation = location
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 decibelValue.clear() //clears the list to start the timer again
