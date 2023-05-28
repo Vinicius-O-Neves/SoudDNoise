@@ -65,6 +65,8 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.4.0")
     implementation("androidx.compose.runtime:runtime-rxjava2:1.4.0")
 
+    implementation 'com.google.code.gson:gson:2.9.0'
+
     testImplementation Testing.jUnit
     androidTestImplementation Testing.androidXJUnit
     androidTestImplementation Testing.espresso

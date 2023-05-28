@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noise.ui_noise.NoiseState
+import com.example.noise.ui_noise.model.AverageDbData
 import com.example.noise.ui_noise.model.FrequencyState
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -31,6 +32,7 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.math3.transform.DftNormalization
 import org.apache.commons.math3.transform.FastFourierTransformer
 import org.apache.commons.math3.transform.TransformType
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -83,20 +85,24 @@ class NoiseActivityViewModel : ViewModel() {
     }
 
     private fun sendAverageDbToFirebase(averageDb: Double, lastLocation: Location?) {
-        val userRef = database
+        val documentRef = database
             .collection("data")
-            .document("average_db")
-            .collection("latitudes")
-            .document(lastLocation?.latitude.toString())
-            .collection("longitudes")
-            .document(lastLocation?.longitude.toString())
+            .document("average_data")
+            .collection("locations")
+            .document("${lastLocation?.latitude} ${lastLocation?.longitude}")
 
         lastLocation?.let {
-            userRef.set(
-                mapOf(
-                    "averageDb" to averageDb
-                )
+            val decimalFormat = DecimalFormat("#.##")
+
+            val newAverageData = AverageDbData(
+                average = decimalFormat.format(averageDb).toDouble(),
+                latitude = lastLocation.latitude,
+                longitude = lastLocation.longitude
             )
+
+            documentRef.set(newAverageData).addOnSuccessListener {
+                Log.d("batata", "sucesso adding $newAverageData")
+            }
         }
     }
 
@@ -104,7 +110,8 @@ class NoiseActivityViewModel : ViewModel() {
     fun sendLastEmergencyLocationToFirebase() {
         val userRef = database.collection("data").document("emergency_location")
 
-        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+        val currentDate =
+            SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
 
         fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY,
             object : CancellationToken() {
@@ -222,35 +229,10 @@ class NoiseActivityViewModel : ViewModel() {
                         override fun isCancellationRequested(): Boolean = false
 
                     }).addOnSuccessListener { location ->
-                    val userRef = database
-                        .collection("data")
-                        .document("average_db")
-                        .collection("latitudes")
-                        .document(location?.latitude.toString())
-                        .collection("longitudes")
-                        .document(location?.longitude.toString())
-
-                    userRef.get().addOnSuccessListener { snapshot ->
-                        snapshot.data.let { data ->
-                            val averageDbFromDatabase = data?.entries?.map {
-                                it.value
-                            }
-
-                            if (averageDbFromDatabase?.get(0) == null) {
-                                sendAverageDbToFirebase(
-                                    averageDb = averageDb,
-                                    lastLocation = location
-                                )
-                            } else {
-                                averageDbFromDatabase[0]?.let { averageFromDatabase ->
-                                    sendAverageDbToFirebase(
-                                        averageDb = (averageDb + averageFromDatabase.toString().toDouble()) / 2,
-                                        lastLocation = location
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    sendAverageDbToFirebase(
+                        averageDb = averageDb,
+                        lastLocation = location
+                    )
                 }
 
                 decibelValue.clear() //clears the list to start the timer again
