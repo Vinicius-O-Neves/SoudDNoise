@@ -1,0 +1,105 @@
+{
+  "project_info": {
+    "project_number": "656460115161",
+    "project_id": "sounddnoise",
+    "storage_bucket": "sounddnoise.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:656460115161:android:cd247d3a5f67fcef9262c8",
+        "android_client_info": {
+          "package_name": "br.puc.soundmap"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "656460115161-ipjfhms2mkjqc9be4vlcba6glmu0apn3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkcVDRi336uefq5jIMrfXFz6ND-jt3QZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "656460115161-ipjfhms2mkjqc9be4vlcba6glmu0apn3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:656460115161:android:d8ff3892d579776f9262c8",
+        "android_client_info": {
+          "package_name": "com.example.noise"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "656460115161-r1qr0n4gm193o9br7u19okobrcambrsa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.noise",
+            "certificate_hash": "5eee604c7150a2d5d33cdc9f50250d8b9e9e0472"
+          }
+        },
+        {
+          "client_id": "656460115161-ipjfhms2mkjqc9be4vlcba6glmu0apn3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkcVDRi336uefq5jIMrfXFz6ND-jt3QZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "656460115161-ipjfhms2mkjqc9be4vlcba6glmu0apn3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:656460115161:android:0693f2a6306ab2d89262c8",
+        "android_client_info": {
+          "package_name": "com.example.sounddnoise"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "656460115161-ipjfhms2mkjqc9be4vlcba6glmu0apn3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkcVDRi336uefq5jIMrfXFz6ND-jt3QZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "656460115161-ipjfhms2mkjqc9be4vlcba6glmu0apn3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
